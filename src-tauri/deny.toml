@@ -13,12 +13,17 @@ no-default-features = false
 [advisories]
 version = 2
 
-# Block on known vulnerabilities, unsound code, and withdrawn/yanked crates
-vulnerability = "deny"
-unmaintained  = "warn"
-unsound       = "deny"
-yanked        = "deny"
-notice        = "warn"
+# cargo-deny v0.16+ (advisories version = 2) value reference:
+#   vulnerability / yanked → "deny" | "warn" | "allow"   (unchanged)
+#   unmaintained / unsound / notice → "all" | "workspace" | "transitive" | "none"
+#     "all"   = check workspace + transitive deps (hard error for unsound/vuln,
+#                warning for unmaintained/notice)
+#     "none"  = skip entirely
+vulnerability = "deny"   # always a hard error
+unmaintained  = "all"    # warn (non-blocking); specific crates suppressed in ignore list
+unsound       = "all"    # hard error; Tauri transitive exceptions in ignore list
+yanked        = "deny"   # always a hard error
+notice        = "all"    # warn (non-blocking)
 
 # Use the RustSec advisory database
 db-urls   = ["https://github.com/rustsec/advisory-db"]
