@@ -1,0 +1,54 @@
+# Gitleaks configuration for AegisPDF
+# Docs: https://github.com/gitleaks/gitleaks
+
+title = "AegisPDF Gitleaks Configuration"
+
+# ── Extend the default ruleset ──────────────────────────────────────────────
+[extend]
+useDefault = true           # load all built-in rules (AWS, GCP, GitHub, etc.)
+
+# ── Additional custom rules ─────────────────────────────────────────────────
+[[rules]]
+id          = "aegis-tauri-signing-key"
+description = "Potential Tauri signing private key"
+regex       = '''(?i)(tauri[_\-]?(signing|private)[_\-]?key)\s*[:=]\s*[''"]([A-Za-z0-9+/=]{20,})'''
+tags        = ["tauri", "signing", "private-key"]
+severity    = "CRITICAL"
+
+[[rules]]
+id          = "aegis-pdfium-key"
+description = "Potential PDFium or API key embedded in source"
+regex       = '''(?i)(pdfium|api)[_\-]?key\s*[:=]\s*[''"][A-Za-z0-9\-_]{16,}[''"]'''
+tags        = ["api-key"]
+severity    = "HIGH"
+
+[[rules]]
+id          = "aegis-hardcoded-password"
+description = "Hardcoded password in source"
+regex       = '''(?i)(password|passwd|secret|token)\s*[:=]\s*[''"][^''"$\{]{6,}[''"]'''
+tags        = ["password"]
+severity    = "HIGH"
+[rules.allowlist]
+description = "Ignore test/placeholder strings"
+regexes     = [
+  '''(?i)(example|placeholder|test|dummy|fake|your[_\-]?password)''',
+  '''(\$\{|\{\{)''',        # template variables
+]
+
+# ── Paths to always ignore ───────────────────────────────────────────────────
+[allowlist]
+description = "Global allowlist"
+paths = [
+  ".gitleaks.toml",           # this file
+  "src-tauri/target",         # build artifacts
+  "node_modules",
+  "dist",
+  ".git",
+]
+
+# Ignore GitHub Actions expression syntax and template strings
+regexes = [
+  '''\$\{\{[^}]+\}\}''',      # ${{ secrets.X }}
+  '''\$\{[^}]+\}''',          # ${VAR}
+  '''#.*NOSEC''',              # inline NOSEC suppression
+]
