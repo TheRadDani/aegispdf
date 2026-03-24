@@ -8,7 +8,7 @@ all-features = false
 no-default-features = false
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ADVISORIES — block any crate with a known CVE or marked as unmaintained
+# ADVISORIES — block CVEs and unsound code; warn on unmaintained crates
 # ─────────────────────────────────────────────────────────────────────────────
 [advisories]
 version = 2
@@ -25,10 +25,40 @@ db-urls   = ["https://github.com/rustsec/advisory-db"]
 db-path   = "~/.cargo/advisory-db"
 
 # Ignore specific advisories only when there is no upstream fix AND the
-# risk is formally accepted (document reason in ignore entry).
-# Example:
-# ignore = [{ id = "RUSTSEC-2023-XXXX", reason = "no fix released yet; mitigated by X" }]
-ignore = []
+# risk is formally accepted. Each entry must include a reason.
+#
+# ── GTK3 / gtk-rs "unmaintained" batch (RUSTSEC-2024-040x) ───────────────────
+# The gtk-rs project marked every GTK3 binding as unmaintained after moving
+# to GTK4. Tauri v2 still depends on WebKitGTK which requires GTK3, so all of
+# these crates are transitive dependencies we cannot replace until Tauri
+# migrates to GTK4. None carry a CVE — the advisory is purely an upstream
+# maintenance notice. Review when Tauri drops GTK3 dependency.
+#
+# ── fxhash (RUSTSEC-2025-0057) ────────────────────────────────────────────────
+# fxhash is a non-cryptographic hash used internally by lopdf/other deps.
+# Marked unmaintained; the replacement (rustc-hash) adoption is the
+# upstream library's responsibility. No security impact (not used for
+# any security-sensitive purpose in our code).
+ignore = [
+  # gtk-rs GTK3 unmaintained batch — all dated 2024-03-04
+  { id = "RUSTSEC-2024-0408", reason = "glib: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0409", reason = "glib-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0410", reason = "gio: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0411", reason = "gio-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0412", reason = "gdk: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0413", reason = "atk: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0414", reason = "gtk: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0415", reason = "cairo: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0416", reason = "pango: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0417", reason = "gdk-pixbuf: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0418", reason = "gdk-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0419", reason = "cairo-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0420", reason = "gtk-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0421", reason = "pango-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  { id = "RUSTSEC-2024-0422", reason = "atk-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
+  # fxhash — non-cryptographic hash, no CVE, unmaintained upstream
+  { id = "RUSTSEC-2025-0057", reason = "fxhash: non-security hash used by transitive deps; no CVE; replacement adoption is upstream's responsibility" },
+]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # LICENSES — allow permissive only; block copyleft and non-standard

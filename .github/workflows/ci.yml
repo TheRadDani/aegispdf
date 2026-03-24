@@ -76,8 +76,20 @@ jobs:
       - name: cargo audit — known CVEs in dependencies
         working-directory: src-tauri
         run: |
+          # --deny vulnerability : block on any known CVE
+          # --deny unsound       : block on memory-unsafety advisories
+          # --deny yanked        : block on yanked crates
+          #
+          # NOTE: --deny warnings is intentionally omitted.
+          # Several GTK3 bindings (atk, gdk, gdk-sys, glib, cairo, pango …)
+          # are flagged as "unmaintained" because gtk-rs moved to GTK4, but
+          # Tauri v2 still requires GTK3 via WebKitGTK on Linux.  These are
+          # transitive deps we cannot upgrade until upstream Tauri does.
+          # They carry no CVE and are ignored in deny.toml with documented
+          # justifications.  Blocking on "unmaintained" here would fail every
+          # Linux build for a risk we cannot mitigate.
           cargo audit \
-            --deny warnings \
+            --deny vulnerability \
             --deny unsound \
             --deny yanked
 
