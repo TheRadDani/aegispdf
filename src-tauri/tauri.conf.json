@@ -29,7 +29,6 @@
   "bundle": {
     "active": true,
     "targets": ["deb", "rpm", "appimage", "nsis", "msi"],
-    "identifier": "dev.aegispdf.app",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -54,14 +53,12 @@
         "ext": ["pdf"],
         "name": "PDF Document",
         "description": "Portable Document Format",
-        "mimeType": "application/pdf",
         "role": "Viewer"
       },
       {
         "ext": ["aegis"],
         "name": "AegisPDF Annotation",
         "description": "AegisPDF non-destructive annotation sidecar",
-        "mimeType": "application/x-aegispdf-annotation",
         "role": "Editor"
       }
     ],
@@ -128,8 +125,7 @@
         "installMode": "currentUser",
         "createDesktopShortcut": true,
         "createStartMenuShortcut": true,
-        "shortcutName": "AegisPDF",
-        "allowToChangeInstallationDirectory": false
+        "shortcutName": "AegisPDF"
       },
       "wix": {
         "language": "en-US"
