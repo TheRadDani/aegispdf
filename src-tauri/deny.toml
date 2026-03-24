@@ -1,84 +1,70 @@
 # cargo-deny configuration for AegisPDF
 # Run locally: cargo deny check
 # Docs: https://embarkstudios.github.io/cargo-deny/
+# Format: cargo-deny v0.16+ (version = 2 schemas)
 
 [graph]
-# Build the dependency graph for the host target only (no cross-compilation noise)
 all-features = false
 no-default-features = false
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ADVISORIES — block CVEs and unsound code; warn on unmaintained crates
+# ADVISORIES
+# v2 field reference:
+#   yanked        → "deny" | "warn" | "allow"
+#   unmaintained  → "all" | "workspace" | "transitive" | "none"
+#   unsound       → "all" | "workspace" | "transitive" | "none"
+# Removed in v0.16: vulnerability (always hard-error), notice (always warn)
 # ─────────────────────────────────────────────────────────────────────────────
 [advisories]
 version = 2
+unmaintained  = "all"    # warns; specific transitive-dep entries are suppressed below
+unsound       = "all"    # hard error; Tauri transitive exceptions suppressed below
+yanked        = "deny"   # hard error
+db-urls       = ["https://github.com/rustsec/advisory-db"]
+db-path       = "~/.cargo/advisory-db"
 
-# cargo-deny v0.16+ (advisories version = 2) value reference:
-#   vulnerability / yanked → "deny" | "warn" | "allow"   (unchanged)
-#   unmaintained / unsound / notice → "all" | "workspace" | "transitive" | "none"
-#     "all"   = check workspace + transitive deps (hard error for unsound/vuln,
-#                warning for unmaintained/notice)
-#     "none"  = skip entirely
-vulnerability = "deny"   # always a hard error
-unmaintained  = "all"    # warn (non-blocking); specific crates suppressed in ignore list
-unsound       = "all"    # hard error; Tauri transitive exceptions in ignore list
-yanked        = "deny"   # always a hard error
-notice        = "all"    # warn (non-blocking)
-
-# Use the RustSec advisory database
-db-urls   = ["https://github.com/rustsec/advisory-db"]
-db-path   = "~/.cargo/advisory-db"
-
-# Ignore specific advisories only when there is no upstream fix AND the
-# risk is formally accepted. Each entry must include a reason.
+# Ignored advisories — only when NO upstream fix exists AND risk is documented.
 #
-# ── GTK3 / gtk-rs "unmaintained" batch (RUSTSEC-2024-040x) ───────────────────
-# The gtk-rs project marked every GTK3 binding as unmaintained after moving
-# to GTK4. Tauri v2 still depends on WebKitGTK which requires GTK3, so all of
-# these crates are transitive dependencies we cannot replace until Tauri
-# migrates to GTK4. None carry a CVE — the advisory is purely an upstream
-# maintenance notice. Review when Tauri drops GTK3 dependency.
+# ── gtk-rs GTK3 "unmaintained" batch (RUSTSEC-2024-040x) ─────────────────────
+# gtk-rs moved to GTK4; Tauri v2 still requires GTK3 via WebKitGTK on Linux.
+# These are transitive deps we cannot replace until Tauri migrates to GTK4.
+# None carry a CVE. Review when Tauri drops its GTK3 dependency.
 #
 # ── fxhash (RUSTSEC-2025-0057) ────────────────────────────────────────────────
-# fxhash is a non-cryptographic hash used internally by lopdf/other deps.
-# Marked unmaintained; the replacement (rustc-hash) adoption is the
-# upstream library's responsibility. No security impact (not used for
-# any security-sensitive purpose in our code).
+# Non-cryptographic hash used by transitive deps. No CVE; no security impact.
+#
+# ── glib unsound VariantStrIter (RUSTSEC-2024-0429) ──────────────────────────
+# Via tauri→webkit2gtk→glib 0.18.5. No patched glib 0.18.x in the Tauri 2.x
+# ecosystem. Not reachable via AegisPDF's attack surface (offline PDF tool).
 ignore = [
-  # gtk-rs GTK3 unmaintained batch — all dated 2024-03-04
-  { id = "RUSTSEC-2024-0408", reason = "glib: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0409", reason = "glib-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0410", reason = "gio: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0411", reason = "gio-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0412", reason = "gdk: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0413", reason = "atk: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0414", reason = "gtk: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0415", reason = "cairo: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0416", reason = "pango: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0417", reason = "gdk-pixbuf: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0418", reason = "gdk-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0419", reason = "cairo-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0420", reason = "gtk-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0421", reason = "pango-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  { id = "RUSTSEC-2024-0422", reason = "atk-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
-  # fxhash — non-cryptographic hash, no CVE, unmaintained upstream
-  { id = "RUSTSEC-2025-0057", reason = "fxhash: non-security hash used by transitive deps; no CVE; replacement adoption is upstream's responsibility" },
-
-  # glib unsound VariantStrIter — arrives via tauri→webkit2gtk→glib 0.18.5.
-  # No patched glib 0.18.x exists in the Tauri 2.x ecosystem; upgrade path
-  # is blocked until Tauri ships webkit2gtk support for glib 0.19+.
-  # Real-world impact: requires crafted GLib Variant data inside the process,
-  # not reachable via AegisPDF's attack surface (offline PDF tool, no network).
-  { id = "RUSTSEC-2024-0429", reason = "glib unsound VariantStrIter: transitive dep via Tauri/webkit2gtk; no fix available in Tauri 2.x ecosystem" },
+  { id = "RUSTSEC-2024-0408", reason = "glib: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0409", reason = "glib-sys: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0410", reason = "gio: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0411", reason = "gio-sys: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0412", reason = "gdk: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0413", reason = "atk: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0414", reason = "gtk: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0415", reason = "cairo: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0416", reason = "pango: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0417", reason = "gdk-pixbuf: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0418", reason = "gdk-sys: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0419", reason = "cairo-sys: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0420", reason = "gtk-sys: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0421", reason = "pango-sys: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2024-0422", reason = "atk-sys: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
+  { id = "RUSTSEC-2025-0057", reason = "fxhash: non-security hash; no CVE; replacement is upstream's responsibility" },
+  { id = "RUSTSEC-2024-0429", reason = "glib unsound VariantStrIter: transitive via Tauri/webkit2gtk; no fix in Tauri 2.x ecosystem" },
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
-# LICENSES — allow permissive only; block copyleft and non-standard
+# LICENSES
+# v2: only the `allow` list is needed. Anything NOT in this list is rejected
+# automatically — no separate `deny`, `unlicensed`, `copyleft`, or `default`
+# fields are required (all removed in cargo-deny v0.16).
 # ─────────────────────────────────────────────────────────────────────────────
 [licenses]
 version = 2
 
-# Deny any license not in this explicit allow list
 allow = [
   "MIT",
   "Apache-2.0",
@@ -93,80 +79,45 @@ allow = [
   "OpenSSL",
 ]
 
-# Deny these licenses outright (copyleft, SSPL, BUSL)
-deny = [
-  "GPL-1.0",
-  "GPL-2.0",
-  "GPL-3.0",
-  "LGPL-2.0",
-  "LGPL-2.1",
-  "LGPL-3.0",
-  "AGPL-1.0",
-  "AGPL-3.0",
-  "MPL-2.0",
-  "EUPL-1.0",
-  "EUPL-1.1",
-  "EUPL-1.2",
-  "CDDL-1.0",
-  "SSPL-1.0",
-  "BUSL-1.1",
-]
-
-# Treat any unlicensed crate as an error
-unlicensed = "deny"
-
-# Warn if a crate has a license that needs review (e.g. non-SPDX)
-copyleft           = "deny"
-allow-osi-fsf-free = "neither"
-default            = "deny"
-
-# Per-crate license exceptions (only when absolutely necessary, with a documented reason)
+# Per-crate exceptions — only when the license is effectively permissive but
+# uses a non-SPDX identifier that does not appear in the allow list above.
 exceptions = [
-  # ring uses a custom BoringSSL-derived license which is effectively permissive
-  # { allow = ["ISC", "MIT", "OpenSSL"], crate = "ring" },
+  # Uncomment if ring is added: its BoringSSL-derived license is permissive.
+  # { allow = ["ISC", "MIT", "OpenSSL"], name = "ring" },
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
-# BANS — forbidden crates, duplicate version policy
+# BANS — duplicate version policy and forbidden crates
+# Entry format uses `name` (not the old `crate`) in cargo-deny v0.16+.
 # ─────────────────────────────────────────────────────────────────────────────
 [bans]
-# Deny use of specific vulnerable or policy-violating crates
-multiple-versions = "warn"      # warn on duplicate semver-incompatible versions
-wildcards         = "deny"      # deny wildcard version requirements (*)
+multiple-versions = "warn"
+wildcards         = "deny"
 highlight         = "all"
 
-# Crates that must never appear in the dependency graph
 deny = [
-  # Unmaintained TLS implementations
-  { crate = "openssl", reason = "use rustls or tauri's built-in TLS" },
-
-  # Insecure random number generation
-  { crate = "rand_core@<0.6", reason = "use rand_core >=0.6 for security" },
-
-  # Removed advisory: std::process::Command injection via unchecked input
-  # is caught by clippy, not cargo-deny.
-
-  # Unmaintained serialisation crates
-  { crate = "rustc-serialize", reason = "unmaintained; use serde" },
-
-  # Known-broken date/time crate
-  { crate = "time@<0.3", reason = "time <0.3 has RUSTSEC-2020-0071" },
+  # Unmaintained TLS — use rustls or Tauri's built-in TLS instead
+  { name = "openssl", reason = "use rustls or tauri's built-in TLS" },
+  # Insecure PRNG — rand_core <0.6 has known weaknesses
+  { name = "rand_core", version = "<0.6", reason = "use rand_core >=0.6 for security" },
+  # Unmaintained serialisation — serde is the maintained replacement
+  { name = "rustc-serialize", reason = "unmaintained; use serde" },
+  # time <0.3 — RUSTSEC-2020-0071 (local time side channel)
+  { name = "time", version = "<0.3", reason = "time <0.3 has RUSTSEC-2020-0071" },
 ]
 
-# Crates that are allowed but should be kept to a single version
+# Accepted duplicate versions brought in by the Tauri/webview2 ecosystem.
 skip = [
-  # Common version duplicates in the Tauri/webview2 ecosystem — accepted
-  { crate = "windows-sys" },
-  { crate = "windows-targets" },
-  { crate = "windows_x86_64_msvc" },
+  { name = "windows-sys" },
+  { name = "windows-targets" },
+  { name = "windows_x86_64_msvc" },
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SOURCES — only allow crates from crates.io and verified git sources
+# SOURCES — only allow crates.io; no unknown registries or raw git URLs
 # ─────────────────────────────────────────────────────────────────────────────
 [sources]
-# Block crates from unknown registries or arbitrary git URLs
-unknown-registry   = "deny"
-unknown-git        = "deny"
-allow-registry     = ["https://github.com/rust-lang/crates.io-index"]
-allow-git          = []          # add trusted git overrides here if needed
+unknown-registry = "deny"
+unknown-git      = "deny"
+allow-registry   = ["https://github.com/rust-lang/crates.io-index"]
+allow-git        = []
