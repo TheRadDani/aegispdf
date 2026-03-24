@@ -1,0 +1,48 @@
+#!/bin/bash
+# AegisPDF — Debian post-installation maintainer script.
+# Called by dpkg after the package files are unpacked.
+set -e
+
+case "$1" in
+  configure)
+    # ── MIME database ───────────────────────────────────────────────────────
+    # Register application/x-aegispdf-annotation (.aegis) and refresh the
+    # standard application/pdf association so the app appears in "Open With".
+    if command -v update-mime-database >/dev/null 2>&1; then
+      update-mime-database /usr/share/mime >/dev/null 2>&1 || true
+    fi
+
+    # ── Desktop application database ───────────────────────────────────────
+    # Makes AegisPDF appear in application menus (GNOME, KDE, XFCE, …).
+    if command -v update-desktop-database >/dev/null 2>&1; then
+      update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+    fi
+
+    # ── hicolor icon theme cache ────────────────────────────────────────────
+    # Flushes the icon cache so the AegisPDF icon is shown immediately.
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+      gtk-update-icon-cache -f -t /usr/share/icons/hicolor >/dev/null 2>&1 || true
+    fi
+
+    # ── XDG MIME default (opt-in) ───────────────────────────────────────────
+    # Registers AegisPDF as a handler for PDF files system-wide so it appears
+    # in the "Open With" context menu. Does NOT override the user's current
+    # default viewer — the user can change the default via:
+    #   xdg-mime default dev.aegispdf.app.desktop application/pdf
+    XDG_APPS=/usr/share/applications
+    if command -v xdg-mime >/dev/null 2>&1; then
+      xdg-mime install --novendor \
+        "$XDG_APPS/../mime/packages/aegispdf-types.xml" 2>/dev/null || true
+    fi
+    ;;
+
+  abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+  *)
+    echo "postinst: unrecognised argument '$1'" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

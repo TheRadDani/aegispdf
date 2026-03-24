@@ -1,0 +1,139 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "AegisPDF",
+  "version": "0.1.0",
+  "identifier": "dev.aegispdf.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "AegisPDF",
+        "label": "main",
+        "width": 1280,
+        "height": 860,
+        "minWidth": 820,
+        "minHeight": 560,
+        "resizable": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "rpm", "appimage", "nsis", "msi"],
+    "identifier": "dev.aegispdf.app",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../assets/aegispdf_logo.svg": "assets/aegispdf_logo.svg"
+    },
+    "publisher": "AegisPDF Contributors",
+    "copyright": "Copyright © 2024 AegisPDF Contributors",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
+    "homepage": "https://github.com/aegispdf/aegispdf",
+    "shortDescription": "Privacy-focused offline PDF workspace",
+    "longDescription": "AegisPDF is a free, open-source, cross-platform PDF workspace. Open, render, reorder, merge, split, compress, OCR and annotate PDFs with a fast Rust/Tauri backend — fully offline, no cloud dependency.",
+    "category": "Utility",
+
+    "fileAssociations": [
+      {
+        "ext": ["pdf"],
+        "name": "PDF Document",
+        "description": "Portable Document Format",
+        "mimeType": "application/pdf",
+        "role": "Viewer"
+      },
+      {
+        "ext": ["aegis"],
+        "name": "AegisPDF Annotation",
+        "description": "AegisPDF non-destructive annotation sidecar",
+        "mimeType": "application/x-aegispdf-annotation",
+        "role": "Editor"
+      }
+    ],
+
+    "linux": {
+      "deb": {
+        "depends": [
+          "libwebkit2gtk-4.1-0",
+          "libgtk-3-0",
+          "libglib2.0-0",
+          "libgdk-pixbuf2.0-0",
+          "libxcb1",
+          "libxcb-render0",
+          "xdg-utils"
+        ],
+        "postInstScript": "debian/postinst",
+        "preRemScript":   "debian/prerm",
+        "postRemScript":  "debian/postrm",
+        "files": {
+          "/usr/share/doc/aegispdf/README.md":                                    "../README.md",
+          "/usr/share/doc/aegispdf/copyright":                                    "../LICENSE",
+          "/usr/share/pixmaps/aegispdf.svg":                                      "../assets/aegispdf_logo.svg",
+          "/usr/share/icons/hicolor/scalable/apps/dev.aegispdf.app.svg":          "../assets/aegispdf_logo.svg",
+          "/usr/share/mime/packages/aegispdf-types.xml":                          "mime/aegispdf-types.xml",
+          "/usr/share/metainfo/dev.aegispdf.app.metainfo.xml":                    "appdata/dev.aegispdf.app.metainfo.xml"
+        }
+      },
+      "rpm": {
+        "depends": [
+          "webkit2gtk4.1",
+          "gtk3",
+          "glib2",
+          "gdk-pixbuf2",
+          "xdg-utils"
+        ],
+        "release": "1",
+        "epoch": 0,
+        "files": {
+          "/usr/share/doc/aegispdf/README.md":                                    "../README.md",
+          "/usr/share/pixmaps/aegispdf.svg":                                      "../assets/aegispdf_logo.svg",
+          "/usr/share/icons/hicolor/scalable/apps/dev.aegispdf.app.svg":          "../assets/aegispdf_logo.svg",
+          "/usr/share/mime/packages/aegispdf-types.xml":                          "mime/aegispdf-types.xml",
+          "/usr/share/metainfo/dev.aegispdf.app.metainfo.xml":                    "appdata/dev.aegispdf.app.metainfo.xml"
+        },
+        "scripts": {
+          "postInstall":   "if command -v update-mime-database >/dev/null 2>&1; then update-mime-database /usr/share/mime; fi\nif command -v update-desktop-database >/dev/null 2>&1; then update-desktop-database /usr/share/applications; fi\nif command -v gtk-update-icon-cache >/dev/null 2>&1; then gtk-update-icon-cache -f -t /usr/share/icons/hicolor; fi",
+          "preUninstall":  "true",
+          "postUninstall": "if command -v update-mime-database >/dev/null 2>&1; then update-mime-database /usr/share/mime; fi\nif command -v update-desktop-database >/dev/null 2>&1; then update-desktop-database /usr/share/applications; fi\nif command -v gtk-update-icon-cache >/dev/null 2>&1; then gtk-update-icon-cache -f -t /usr/share/icons/hicolor; fi"
+        }
+      },
+      "appimage": {
+        "bundleMediaFramework": false,
+        "files": {}
+      }
+    },
+
+    "windows": {
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
+      },
+      "nsis": {
+        "languages": ["English"],
+        "displayLanguageSelector": false,
+        "installMode": "currentUser",
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "shortcutName": "AegisPDF",
+        "allowToChangeInstallationDirectory": false
+      },
+      "wix": {
+        "language": "en-US"
+      }
+    }
+  }
+}

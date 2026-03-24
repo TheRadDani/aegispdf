@@ -1,0 +1,19 @@
+#!/bin/bash
+# AegisPDF — Debian pre-removal maintainer script.
+# Called by dpkg before the package files are removed.
+set -e
+
+case "$1" in
+  remove|upgrade|deconfigure)
+    ;;
+
+  failed-upgrade)
+    ;;
+
+  *)
+    echo "prerm: unrecognised argument '$1'" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

@@ -1,0 +1,130 @@
+# cargo-deny configuration for AegisPDF
+# Run locally: cargo deny check
+# Docs: https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+# Build the dependency graph for the host target only (no cross-compilation noise)
+all-features = false
+no-default-features = false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ADVISORIES — block any crate with a known CVE or marked as unmaintained
+# ─────────────────────────────────────────────────────────────────────────────
+[advisories]
+version = 2
+
+# Block on known vulnerabilities, unsound code, and withdrawn/yanked crates
+vulnerability = "deny"
+unmaintained  = "warn"
+unsound       = "deny"
+yanked        = "deny"
+notice        = "warn"
+
+# Use the RustSec advisory database
+db-urls   = ["https://github.com/rustsec/advisory-db"]
+db-path   = "~/.cargo/advisory-db"
+
+# Ignore specific advisories only when there is no upstream fix AND the
+# risk is formally accepted (document reason in ignore entry).
+# Example:
+# ignore = [{ id = "RUSTSEC-2023-XXXX", reason = "no fix released yet; mitigated by X" }]
+ignore = []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LICENSES — allow permissive only; block copyleft and non-standard
+# ─────────────────────────────────────────────────────────────────────────────
+[licenses]
+version = 2
+
+# Deny any license not in this explicit allow list
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "0BSD",
+  "CC0-1.0",
+  "Unicode-DFS-2016",
+  "Zlib",
+  "OpenSSL",
+]
+
+# Deny these licenses outright (copyleft, SSPL, BUSL)
+deny = [
+  "GPL-1.0",
+  "GPL-2.0",
+  "GPL-3.0",
+  "LGPL-2.0",
+  "LGPL-2.1",
+  "LGPL-3.0",
+  "AGPL-1.0",
+  "AGPL-3.0",
+  "MPL-2.0",
+  "EUPL-1.0",
+  "EUPL-1.1",
+  "EUPL-1.2",
+  "CDDL-1.0",
+  "SSPL-1.0",
+  "BUSL-1.1",
+]
+
+# Treat any unlicensed crate as an error
+unlicensed = "deny"
+
+# Warn if a crate has a license that needs review (e.g. non-SPDX)
+copyleft           = "deny"
+allow-osi-fsf-free = "neither"
+default            = "deny"
+
+# Per-crate license exceptions (only when absolutely necessary, with a documented reason)
+exceptions = [
+  # ring uses a custom BoringSSL-derived license which is effectively permissive
+  # { allow = ["ISC", "MIT", "OpenSSL"], crate = "ring" },
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BANS — forbidden crates, duplicate version policy
+# ─────────────────────────────────────────────────────────────────────────────
+[bans]
+# Deny use of specific vulnerable or policy-violating crates
+multiple-versions = "warn"      # warn on duplicate semver-incompatible versions
+wildcards         = "deny"      # deny wildcard version requirements (*)
+highlight         = "all"
+
+# Crates that must never appear in the dependency graph
+deny = [
+  # Unmaintained TLS implementations
+  { crate = "openssl", reason = "use rustls or tauri's built-in TLS" },
+
+  # Insecure random number generation
+  { crate = "rand_core@<0.6", reason = "use rand_core >=0.6 for security" },
+
+  # Removed advisory: std::process::Command injection via unchecked input
+  # is caught by clippy, not cargo-deny.
+
+  # Unmaintained serialisation crates
+  { crate = "rustc-serialize", reason = "unmaintained; use serde" },
+
+  # Known-broken date/time crate
+  { crate = "time@<0.3", reason = "time <0.3 has RUSTSEC-2020-0071" },
+]
+
+# Crates that are allowed but should be kept to a single version
+skip = [
+  # Common version duplicates in the Tauri/webview2 ecosystem — accepted
+  { crate = "windows-sys" },
+  { crate = "windows-targets" },
+  { crate = "windows_x86_64_msvc" },
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SOURCES — only allow crates from crates.io and verified git sources
+# ─────────────────────────────────────────────────────────────────────────────
+[sources]
+# Block crates from unknown registries or arbitrary git URLs
+unknown-registry   = "deny"
+unknown-git        = "deny"
+allow-registry     = ["https://github.com/rust-lang/crates.io-index"]
+allow-git          = []          # add trusted git overrides here if needed

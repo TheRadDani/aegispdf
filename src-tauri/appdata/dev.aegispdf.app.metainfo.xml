@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metainfo — makes AegisPDF discoverable in GNOME Software,
+     KDE Discover, and any other AppStream-compatible software centre.
+     Installed to /usr/share/metainfo/ by the deb/rpm packages.
+     Spec: https://www.freedesktop.org/software/appstream/docs/
+-->
+<component type="desktop-application">
+  <id>dev.aegispdf.app</id>
+  <launchable type="desktop-id">dev.aegispdf.app.desktop</launchable>
+
+  <name>AegisPDF</name>
+  <summary>Privacy-focused offline PDF workspace</summary>
+
+  <description>
+    <p>
+      AegisPDF is a free, open-source, cross-platform PDF workspace.
+      Open, render, reorder, merge, split, compress, OCR and annotate
+      PDF documents — fully offline, no cloud dependency, no telemetry.
+    </p>
+    <p>Feature highlights:</p>
+    <ul>
+      <li>Visual page grid with drag-and-drop reordering</li>
+      <li>Merge multiple PDFs with safe object-ID remapping</li>
+      <li>Split PDFs by page range or one file per page</li>
+      <li>Smart compression using stream pruning and FlateDecode</li>
+      <li>Auto-clean: strip metadata and embedded annotations</li>
+      <li>OCR text extraction via Tesseract (offline)</li>
+      <li>Blank and duplicate page detection</li>
+      <li>Non-destructive highlight and text-note annotations stored as
+          a sidecar .aegis file — original PDF untouched</li>
+    </ul>
+  </description>
+
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+
+  <categories>
+    <category>Utility</category>
+    <category>Office</category>
+    <category>Viewer</category>
+  </categories>
+
+  <keywords>
+    <keyword>pdf</keyword>
+    <keyword>document</keyword>
+    <keyword>viewer</keyword>
+    <keyword>editor</keyword>
+    <keyword>merge</keyword>
+    <keyword>compress</keyword>
+    <keyword>ocr</keyword>
+    <keyword>annotate</keyword>
+    <keyword>privacy</keyword>
+    <keyword>offline</keyword>
+  </keywords>
+
+  <mimetypes>
+    <mimetype>application/pdf</mimetype>
+    <mimetype>application/x-aegispdf-annotation</mimetype>
+  </mimetypes>
+
+  <provides>
+    <binary>aegispdf</binary>
+  </provides>
+
+  <url type="homepage">https://github.com/aegispdf/aegispdf</url>
+  <url type="bugtracker">https://github.com/aegispdf/aegispdf/issues</url>
+  <url type="vcs-browser">https://github.com/aegispdf/aegispdf</url>
+
+  <developer id="dev.aegispdf">
+    <name>AegisPDF Contributors</name>
+  </developer>
+
+  <releases>
+    <release version="0.1.0" date="2024-03-01">
+      <description>
+        <p>Initial release: visual page workspace, merge, split, compress,
+           OCR, annotation sidecar, blank/duplicate detection.</p>
+      </description>
+    </release>
+  </releases>
+
+  <content_rating type="oars-1.1"/>
+</component>

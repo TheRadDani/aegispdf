@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AegisPDF custom MIME type registration.
+     Installed to /usr/share/mime/packages/aegispdf-types.xml by the deb package.
+     Activated at install time via:  update-mime-database /usr/share/mime
+-->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+
+  <!-- .aegis — non-destructive annotation sidecar files created by AegisPDF -->
+  <mime-type type="application/x-aegispdf-annotation">
+    <comment>AegisPDF Annotation File</comment>
+    <comment xml:lang="en">AegisPDF Annotation File</comment>
+    <generic-icon name="text-x-generic"/>
+    <glob pattern="*.aegis" weight="80"/>
+    <magic>
+      <!-- JSON file that contains a "pdf_hash" key at the top level -->
+      <match type="string" offset="0" value='{"pdf_hash"'/>
+      <match type="string" offset="0" value='{ "pdf_hash"'/>
+    </magic>
+    <sub-class-of type="application/json"/>
+  </mime-type>
+
+</mime-info>
