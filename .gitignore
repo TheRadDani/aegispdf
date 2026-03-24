@@ -3,11 +3,13 @@ dist
 src-tauri/target
 *.log
 
-# Generated icons (created by scripts/gen-icons.sh)
+# Generated icons (created by scripts/gen-icons.sh — source is assets/aegispdf_logo.svg)
 src-tauri/icons/*.png
 src-tauri/icons/*.ico
 src-tauri/icons/*.icns
-!src-tauri/icons/aegispdf.svg
+
+# Assets folder is the canonical source — never ignore it
+!assets/
 
 # OS
 .DS_Store

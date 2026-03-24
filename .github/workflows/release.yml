@@ -115,8 +115,10 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Generate icons
-        run: chmod +x scripts/gen-icons.sh && ./scripts/gen-icons.sh
+      - name: Generate icons from brand logo
+        run: |
+          ls -lh assets/aegispdf_logo.svg
+          chmod +x scripts/gen-icons.sh && ./scripts/gen-icons.sh
 
       - name: Run Rust tests
         working-directory: src-tauri
@@ -186,13 +188,14 @@ jobs:
           winget install --id ImageMagick.ImageMagick --exact `
             --accept-source-agreements --accept-package-agreements -h || true
 
-      - name: Generate icons (PowerShell fallback)
+      - name: Generate icons from brand logo
         shell: pwsh
         run: |
           $inkscape = "C:\Program Files\Inkscape\bin\inkscape.exe"
           $magick   = "magick"
-          $svg = "src-tauri\icons\aegispdf.svg"
+          $svg = "assets\aegispdf_logo.svg"   # canonical brand logo
           $out = "src-tauri\icons"
+          if (-not (Test-Path $svg)) { throw "Brand SVG not found: $svg" }
 
           function Render($size, $dest) {
               if (Test-Path $inkscape) {
