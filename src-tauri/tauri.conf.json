@@ -120,10 +120,7 @@
       "nsis": {
         "languages": ["English"],
         "displayLanguageSelector": false,
-        "installMode": "currentUser",
-        "createDesktopShortcut": true,
-        "createStartMenuShortcut": true,
-        "shortcutName": "AegisPDF"
+        "installMode": "currentUser"
       },
       "wix": {
         "language": "en-US"
