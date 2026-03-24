@@ -14,12 +14,15 @@ pub fn reorder_pages_by_page_number(document: &mut Document, new_order: &[u32]) 
         .map(|pn| Object::Reference(*pages_map.get(pn).expect("validated")))
         .collect();
 
-    let catalog = document.catalog()?;
-    let pages_id = catalog
-        .get(b"Pages")
-        .and_then(Object::as_reference)
-        .copied()
-        .ok_or_else(|| anyhow::anyhow!("catalog missing Pages"))?;
+    // Extract pages_id in a limited scope so the shared borrow on `document`
+    // from `catalog()` is dropped before the mutable borrow below.
+    let pages_id = {
+        let catalog = document.catalog()?;
+        catalog
+            .get(b"Pages")
+            .and_then(Object::as_reference)
+            .map_err(|_| anyhow::anyhow!("catalog missing Pages entry"))?
+    };
 
     let dict = document.get_dictionary_mut(pages_id)?;
     dict.set(b"Kids", Object::Array(kids));

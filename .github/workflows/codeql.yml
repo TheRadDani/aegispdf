@@ -80,6 +80,9 @@ jobs:
           # Single suite — comma list not needed for one entry
           queries: security-extended
 
+      - name: Generate placeholder icons (required by tauri::generate_context!)
+        run: python3 scripts/gen-placeholder-icons.py
+
       - name: Build Rust crate for CodeQL
         working-directory: src-tauri
         run: cargo build 2>&1

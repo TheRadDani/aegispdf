@@ -22,7 +22,8 @@ pub fn analyze_pages(document: &Document, threshold: f32) -> AegisResult<Vec<Pag
     let mut hash_to_first: HashMap<String, usize> = HashMap::new();
 
     for idx in 0..page_count {
-        let (hash, mad) = pdfium_renderer::page_render_fingerprint(document, idx, 64)?;
+        let (hash, mad) = pdfium_renderer::page_render_fingerprint(document, idx, 64)
+            .map_err(|e| AegisError::Render(e.to_string()))?;
         let is_blank = mad < threshold;
         let duplicate_of = hash_to_first.get(&hash).copied().filter(|&first| first != idx);
         if !hash_to_first.contains_key(&hash) {
@@ -37,4 +38,3 @@ pub fn analyze_pages(document: &Document, threshold: f32) -> AegisResult<Vec<Pag
     }
     Ok(results)
 }
-

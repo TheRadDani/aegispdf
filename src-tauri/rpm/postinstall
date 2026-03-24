@@ -1,0 +1,20 @@
+#!/bin/bash
+# AegisPDF — RPM %post (post-install) script
+set -e
+
+# Update MIME database so .pdf and .aegis open with AegisPDF
+if command -v update-mime-database >/dev/null 2>&1; then
+  update-mime-database /usr/share/mime >/dev/null 2>&1 || true
+fi
+
+# Refresh desktop application index (GNOME, KDE, XFCE app menus)
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+fi
+
+# Flush hicolor icon cache so the AegisPDF icon appears immediately
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+  gtk-update-icon-cache -f -t /usr/share/icons/hicolor >/dev/null 2>&1 || true
+fi
+
+exit 0

@@ -36,7 +36,7 @@ pub fn merge_pdfs(inputs: &[PathBuf], output: &PathBuf) -> AegisResult<()> {
 
 fn merge_documents(documents: Vec<Document>) -> anyhow::Result<Document> {
     let mut max_id = 1_u32;
-    /// Preserve **page order** (not ObjectId sort order).
+    // Preserve page order (not ObjectId sort order).
     let mut documents_pages: Vec<(ObjectId, Object)> = Vec::new();
     let mut documents_objects: std::collections::BTreeMap<ObjectId, Object> =
         std::collections::BTreeMap::new();

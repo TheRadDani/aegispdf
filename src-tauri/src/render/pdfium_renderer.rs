@@ -6,11 +6,18 @@ use lopdf::Document;
 use pdfium_render::prelude::*;
 use sha2::{Digest, Sha256};
 
+/// Serialize the document to bytes so PDFium can load it.
+fn doc_to_bytes(document: &Document) -> anyhow::Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    document.clone().save_to(&mut bytes)?;
+    Ok(bytes)
+}
+
 /// Raw PNG bytes for OCR pipelines.
 pub fn render_page_png(document: &Document, page_index: usize, target_width: i32) -> anyhow::Result<Vec<u8>> {
     let bindings = Pdfium::bind_to_system_library().map_err(|e| anyhow::anyhow!(e.to_string()))?;
     let pdfium = Pdfium::new(bindings);
-    let bytes = document.clone().save_to(Vec::new())?;
+    let bytes = doc_to_bytes(document)?;
     let loaded = pdfium.load_pdf_from_byte_vec(bytes, None)?;
     let page = loaded.pages().get(page_index as u16)?;
     let bitmap = page.render_with_config(
@@ -41,7 +48,7 @@ pub fn render_page_thumbnail_base64(document: &Document, page_index: usize, zoom
 pub fn page_render_fingerprint(document: &Document, page_index: usize, target_width: i32) -> anyhow::Result<(String, f32)> {
     let bindings = Pdfium::bind_to_system_library().map_err(|e| anyhow::anyhow!(e.to_string()))?;
     let pdfium = Pdfium::new(bindings);
-    let bytes = document.clone().save_to(Vec::new())?;
+    let bytes = doc_to_bytes(document)?;
     let loaded = pdfium.load_pdf_from_byte_vec(bytes, None)?;
     let page = loaded.pages().get(page_index as u16)?;
     let bitmap = page.render_with_config(
@@ -67,10 +74,6 @@ pub fn page_render_fingerprint(document: &Document, page_index: usize, target_wi
         mad_sum += (255.0 - r).abs() + (255.0 - g).abs() + (255.0 - b).abs();
         n += 3;
     }
-    let mad = if n == 0 {
-        0.0
-    } else {
-        (mad_sum / n as f64) as f32
-    };
+    let mad = if n == 0 { 0.0 } else { (mad_sum / n as f64) as f32 };
     Ok((hex, mad))
 }

@@ -1,0 +1,4 @@
+#!/bin/bash
+# AegisPDF — RPM %preun (pre-uninstall) script
+set -e
+exit 0

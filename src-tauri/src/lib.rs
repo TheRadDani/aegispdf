@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 
 use core::pdf::PdfWorkspace;
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 
 pub use error::{AegisError, AegisErrorResponse};
 
@@ -30,10 +30,10 @@ impl Default for Workspaces {
 /// a .pdf on Windows, or `xdg-open file.pdf` on Linux).
 fn extract_file_arg() -> Option<String> {
     std::env::args()
-        .skip(1)                           // skip argv[0] (binary name)
+        .skip(1)
         .find(|arg| {
             if arg.starts_with('-') {
-                return false;              // skip flag arguments
+                return false;
             }
             let path = std::path::Path::new(arg);
             let ext = path
@@ -56,12 +56,8 @@ pub fn run() {
             app.manage(Workspaces::default());
             app.manage(jobs::JobQueue::spawn(handle.clone()));
 
-            // If a file was passed on the command line (e.g. double-click PDF),
-            // wait until the webview finishes loading, then emit the path so
-            // the frontend auto-opens it.
             if let Some(path) = initial_file.clone() {
                 std::thread::spawn(move || {
-                    // 900 ms covers typical webview startup on slow machines.
                     std::thread::sleep(std::time::Duration::from_millis(900));
                     let _ = handle.emit("aegis://open-file", &path);
                 });

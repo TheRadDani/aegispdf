@@ -1,6 +1,7 @@
 //! OCR via Tesseract CLI (offline). Requires `tesseract` on PATH.
 
 use std::fs;
+use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
@@ -11,7 +12,7 @@ use crate::error::{AegisError, AegisResult};
 /// Run Tesseract on a PNG byte slice; returns UTF-8 text.
 pub fn ocr_png_bytes(png: &[u8], lang: &str) -> AegisResult<String> {
     let mut tmp = NamedTempFile::with_suffix(".png").map_err(AegisError::from)?;
-    std::io::Write::write_all(&mut tmp, png).map_err(AegisError::from)?;
+    tmp.write_all(png).map_err(AegisError::from)?;
     tmp.flush().map_err(AegisError::from)?;
 
     let out = Command::new("tesseract")
@@ -38,7 +39,6 @@ pub fn ocr_png_bytes(png: &[u8], lang: &str) -> AegisResult<String> {
 
 /// Append per-page OCR text to a UTF-8 file (simple text layer export).
 pub fn append_page_text(path: &Path, page_index: usize, text: &str) -> AegisResult<()> {
-    use std::io::Write;
     let mut f = fs::OpenOptions::new()
         .create(true)
         .append(true)
