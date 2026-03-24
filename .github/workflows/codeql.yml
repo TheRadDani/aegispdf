@@ -21,7 +21,6 @@ jobs:
   analyze-javascript:
     name: "🔍 CodeQL — JavaScript/TypeScript"
     runs-on: ubuntu-latest
-
     strategy:
       fail-fast: false
 
@@ -32,9 +31,10 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
-          queries: |
-            security-extended
-            security-and-quality
+          # Comma-separated query suite names — must NOT use YAML block scalar (|)
+          # because the action receives them as a single string and splits on commas.
+          # "security-and-quality" is a superset of "security-extended".
+          queries: security-extended,security-and-quality
           config: |
             paths:
               - src
@@ -59,7 +59,6 @@ jobs:
   analyze-rust:
     name: "🔍 CodeQL — Rust (experimental)"
     runs-on: ubuntu-latest
-
     strategy:
       fail-fast: false
 
@@ -71,12 +70,14 @@ jobs:
       - name: Install minimal system deps
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libssl-dev pkg-config
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libssl-dev pkg-config
 
       - name: Initialize CodeQL (Rust)
         uses: github/codeql-action/init@v3
         with:
           languages: rust
+          # Single suite — comma list not needed for one entry
           queries: security-extended
 
       - name: Build Rust crate for CodeQL
