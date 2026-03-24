@@ -74,9 +74,9 @@
           "libxcb-render0",
           "xdg-utils"
         ],
-        "postInstScript": "debian/postinst",
-        "preRemScript":   "debian/prerm",
-        "postRemScript":  "debian/postrm",
+        "postInstallScript": "debian/postinst",
+        "preRemoveScript":  "debian/prerm",
+        "postRemoveScript": "debian/postrm",
         "files": {
           "/usr/share/doc/aegispdf/README.md":                                    "../README.md",
           "/usr/share/doc/aegispdf/copyright":                                    "../LICENSE",
