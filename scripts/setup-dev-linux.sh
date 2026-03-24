@@ -111,10 +111,15 @@ info "Installing npm dependencies..."
 (cd "$ROOT" && npm install)
 
 # ────────────────────────────────────────────────────────────────────
-# 7. Icons
+# 7. Icons (generated from assets/aegispdf_logo.svg)
 # ────────────────────────────────────────────────────────────────────
-info "Generating application icons..."
-bash "$ROOT/scripts/gen-icons.sh"
+if [[ -f "$ROOT/assets/aegispdf_logo.svg" ]]; then
+  info "Generating application icons from assets/aegispdf_logo.svg ..."
+  bash "$ROOT/scripts/gen-icons.sh"
+else
+  warn "assets/aegispdf_logo.svg not found — skipping icon generation."
+  warn "Add your brand SVG there and run:  ./scripts/gen-icons.sh"
+fi
 
 echo ""
 ok "Development environment ready!"

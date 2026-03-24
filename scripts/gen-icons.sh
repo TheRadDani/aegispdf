@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Generate all Tauri-required icon sizes from the master SVG.
-# Requires: Inkscape (preferred) OR rsvg-convert/ImageMagick (fallback).
+# Generate all Tauri-required icon sizes from the master brand SVG.
+# Master source: assets/aegispdf_logo.svg  (1024×1024 — do not edit here)
 #
+# Requires: Inkscape (preferred) OR rsvg-convert/ImageMagick (fallback).
 # Run from the repository root:
 #   chmod +x scripts/gen-icons.sh && ./scripts/gen-icons.sh
 
@@ -9,14 +10,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$SCRIPT_DIR/.."
-SVG="$ROOT/src-tauri/icons/aegispdf.svg"
-OUT="$ROOT/src-tauri/icons"
+SVG="$ROOT/assets/aegispdf_logo.svg"   # canonical brand logo
+OUT="$ROOT/src-tauri/icons"            # Tauri icon output directory
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
-require_tool() {
-  command -v "$1" &>/dev/null || die "'$1' not found. Install it first (see README)."
-}
+[[ -f "$SVG" ]] || die "Brand SVG not found: $SVG"
 
 render_svg() {
   local svg="$1" out="$2" size="$3"
@@ -33,7 +32,9 @@ render_svg() {
   fi
 }
 
-echo "==> Generating PNG icons from $SVG"
+echo "==> Source logo : $SVG"
+echo "==> Output dir  : $OUT"
+echo "==> Generating PNG icons..."
 mkdir -p "$OUT"
 
 render_svg "$SVG" "$OUT/32x32.png"      32
