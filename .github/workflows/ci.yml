@@ -76,20 +76,22 @@ jobs:
       - name: cargo audit — known CVEs in dependencies
         working-directory: src-tauri
         run: |
-          # cargo audit exits non-zero on known CVEs (vulnerabilities) by
-          # default — no flag is needed for that.
+          # cargo audit exits non-zero on known CVEs by default.
           # --deny unsound : also block memory-unsafety advisories
           # --deny yanked  : also block yanked crates
           #
-          # --deny unmaintained / --deny warnings are intentionally omitted:
-          # GTK3 bindings (atk, gdk, glib, cairo, pango …) are flagged as
-          # unmaintained because gtk-rs moved to GTK4, but Tauri v2 still
-          # requires GTK3 via WebKitGTK on Linux.  They carry no CVE and are
-          # ignored in deny.toml.  Blocking on "unmaintained" would fail
-          # every Linux build for a risk we cannot mitigate.
+          # --deny unmaintained is intentionally omitted: GTK3 bindings
+          # (atk, gdk, glib, cairo, pango …) are flagged unmaintained because
+          # gtk-rs moved to GTK4, but Tauri v2 still needs GTK3 via WebKitGTK.
+          #
+          # RUSTSEC-2024-0429 (glib unsound VariantStrIter) is explicitly
+          # ignored: it arrives via tauri→webkit2gtk→glib and there is no
+          # patched glib 0.18.x available in the Tauri 2.x ecosystem.
+          # Tracked in deny.toml; remove when Tauri ships a fix.
           cargo audit \
             --deny unsound \
-            --deny yanked
+            --deny yanked \
+            --ignore RUSTSEC-2024-0429
 
       - name: Install cargo-deny
         run: cargo install cargo-deny --locked

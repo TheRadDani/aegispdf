@@ -58,6 +58,13 @@ ignore = [
   { id = "RUSTSEC-2024-0422", reason = "atk-sys: GTK3 binding required by Tauri/WebKitGTK on Linux; no upstream fix available" },
   # fxhash — non-cryptographic hash, no CVE, unmaintained upstream
   { id = "RUSTSEC-2025-0057", reason = "fxhash: non-security hash used by transitive deps; no CVE; replacement adoption is upstream's responsibility" },
+
+  # glib unsound VariantStrIter — arrives via tauri→webkit2gtk→glib 0.18.5.
+  # No patched glib 0.18.x exists in the Tauri 2.x ecosystem; upgrade path
+  # is blocked until Tauri ships webkit2gtk support for glib 0.19+.
+  # Real-world impact: requires crafted GLib Variant data inside the process,
+  # not reachable via AegisPDF's attack surface (offline PDF tool, no network).
+  { id = "RUSTSEC-2024-0429", reason = "glib unsound VariantStrIter: transitive dep via Tauri/webkit2gtk; no fix available in Tauri 2.x ecosystem" },
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
