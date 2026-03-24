@@ -103,11 +103,9 @@
           "/usr/share/mime/packages/aegispdf-types.xml":                          "mime/aegispdf-types.xml",
           "/usr/share/metainfo/dev.aegispdf.app.metainfo.xml":                    "appdata/dev.aegispdf.app.metainfo.xml"
         },
-        "scripts": {
-          "postInstall":   "if command -v update-mime-database >/dev/null 2>&1; then update-mime-database /usr/share/mime; fi\nif command -v update-desktop-database >/dev/null 2>&1; then update-desktop-database /usr/share/applications; fi\nif command -v gtk-update-icon-cache >/dev/null 2>&1; then gtk-update-icon-cache -f -t /usr/share/icons/hicolor; fi",
-          "preUninstall":  "true",
-          "postUninstall": "if command -v update-mime-database >/dev/null 2>&1; then update-mime-database /usr/share/mime; fi\nif command -v update-desktop-database >/dev/null 2>&1; then update-desktop-database /usr/share/applications; fi\nif command -v gtk-update-icon-cache >/dev/null 2>&1; then gtk-update-icon-cache -f -t /usr/share/icons/hicolor; fi"
-        }
+        "postInstallScript": "rpm/postinstall",
+        "preRemoveScript":   "rpm/preremove",
+        "postRemoveScript":  "rpm/postremove"
       },
       "appimage": {
         "bundleMediaFramework": false,
