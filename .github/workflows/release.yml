@@ -11,17 +11,52 @@ on:
         required: false
         default: "v0.0.0-dev"
 
+# Release workflow requires the full CI pipeline to have passed first.
+# The 'ci-passed' job enforces this via workflow_run dependency.
 permissions:
   contents: write
+  actions: read
 
 env:
   PDFIUM_VERSION: "6611"
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────
+  # Gate: verify the most recent CI run on this ref passed all security checks
+  # ─────────────────────────────────────────────────────────────────────────
+  ci-passed:
+    name: "🔒 Verify CI security + quality gate"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check CI status for this ref
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              event: "push",
+              head_sha: context.sha,
+            });
+
+            const ciRun = runs.workflow_runs.find(r =>
+              r.name === "CI" && r.conclusion === "success"
+            );
+
+            if (!ciRun) {
+              core.setFailed(
+                "No successful CI run found for this commit SHA. " +
+                "Ensure the full CI pipeline (security + quality gates) passes before releasing."
+              );
+            } else {
+              console.log(`CI passed: ${ciRun.html_url}`);
+            }
+
+  # ─────────────────────────────────────────────────────────────────────────
   # Linux (.deb, .rpm, .AppImage)
   # ─────────────────────────────────────────────────────────────────────────
   build-linux:
+    needs: ci-passed
     name: Linux bundles
     runs-on: ubuntu-22.04
 
@@ -112,6 +147,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────
   build-windows:
     name: Windows bundles
+    needs: ci-passed
     runs-on: windows-latest
 
     steps:

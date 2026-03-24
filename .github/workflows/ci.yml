@@ -1,26 +1,66 @@
 name: CI
 
+# Triggers: every push to every branch, every PR targeting main or dev.
+# Every job is a required status check. PRs cannot be merged unless ALL pass.
 on:
   push:
-    branches: [main, dev]
+    branches: ["**"]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
+
+# Minimal default permissions — jobs escalate only what they need.
+permissions:
+  contents: read
+
+# Cancel in-flight runs for the same branch/PR to save runner minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-  PDFIUM_VERSION: "6611"
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 1 — SECURITY GATE
+# All three jobs must pass before any build or quality job is allowed to start.
+# A failure here blocks the entire pipeline.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 1a. Secret / credential leak detection (gitleaks)
+  # Scans every commit in the push diff for hardcoded secrets, tokens, keys.
+  # ─────────────────────────────────────────────────────────────────────────
 jobs:
-  # ─────────────────────────────────────────────────────────────────────────
-  # Rust unit + integration tests (no PDFium needed)
-  # ─────────────────────────────────────────────────────────────────────────
-  rust-tests:
-    name: Rust tests
-    runs-on: ubuntu-22.04
+  secrets-scan:
+    name: "🔑 Secret scan (gitleaks)"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy, rustfmt
+          fetch-depth: 0        # full history so gitleaks can diff
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}   # optional paid tier
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 1b. Rust supply-chain: CVE audit + license/ban policy (cargo-audit + cargo-deny)
+  # ─────────────────────────────────────────────────────────────────────────
+  supply-chain-rust:
+    name: "📦 Rust supply-chain (audit + deny)"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
@@ -28,35 +68,309 @@ jobs:
       - name: Install minimal system deps
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libgtk-3-dev \
-            libssl-dev \
-            pkg-config
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libssl-dev pkg-config
 
-      - name: Format check
-        working-directory: src-tauri
-        run: cargo fmt --check
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
 
-      - name: Clippy
+      - name: cargo audit — known CVEs in dependencies
         working-directory: src-tauri
-        run: cargo clippy -- -D warnings
+        run: |
+          cargo audit \
+            --deny warnings \
+            --deny unsound \
+            --deny yanked
 
-      - name: Unit & integration tests
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+
+      - name: cargo deny — license, ban, and source policy
         working-directory: src-tauri
-        run: cargo test
+        run: cargo deny check
 
   # ─────────────────────────────────────────────────────────────────────────
-  # TypeScript type-check
+  # 1c. npm supply-chain: vulnerability audit + license policy
   # ─────────────────────────────────────────────────────────────────────────
-  ts-check:
-    name: TypeScript check
+  supply-chain-npm:
+    name: "📦 npm supply-chain (audit + licenses)"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
-      - run: npm ci
-      - run: npm run build
+
+      - name: Install dependencies (clean install)
+        run: npm ci
+
+      - name: npm audit — known CVEs (high + critical block)
+        run: npm audit --audit-level=high
+
+      - name: Install license-checker
+        run: npm install -g license-checker
+
+      - name: Check frontend dependency licenses
+        run: |
+          license-checker \
+            --production \
+            --onlyAllow "MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;Python-2.0;BlueOak-1.0.0" \
+            --excludePrivatePackages \
+            --json \
+            --out /tmp/licenses.json
+          echo "Frontend dependency licenses: OK"
+          cat /tmp/licenses.json | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          copyleft = [k for k, v in data.items() if any(
+              lic in v.get('licenses', '')
+              for lic in ['GPL', 'LGPL', 'AGPL', 'EUPL', 'CDDL', 'MPL']
+          )]
+          if copyleft:
+              print('BLOCKED: copyleft licenses found:', copyleft)
+              sys.exit(1)
+          print(f'OK: {len(data)} packages, all permissive.')
+          "
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 1d. Filesystem secret / IaC misconfiguration scan (Trivy)
+  # Catches secrets committed to files, misconfigurations in YAML/JSON/TOML.
+  # ─────────────────────────────────────────────────────────────────────────
+  trivy-scan:
+    name: "🛡️  Trivy (secrets + misconfig)"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write       # SARIF upload to GitHub Security tab
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"
+          scanners: "vuln,secret,misconfig"
+          skip-dirs: "src-tauri/target,node_modules,.git"
+
+      - name: Upload SARIF to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SECURITY GATE — aggregates Phase 1; all downstream jobs depend on this.
+  # If any security check fails this gate fails and no code can proceed.
+  # ─────────────────────────────────────────────────────────────────────────
+  security-gate:
+    name: "🚦 Security gate"
+    runs-on: ubuntu-latest
+    needs: [secrets-scan, supply-chain-rust, supply-chain-npm, trivy-scan]
+    steps:
+      - name: All security checks passed
+        run: echo "Security gate passed — proceeding to quality checks."
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 2 — CODE QUALITY GATE
+# Runs only after the security gate is green. Four parallel jobs:
+# format · lint · tests with coverage · frontend type + lint
+# ═══════════════════════════════════════════════════════════════════════════════
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 2a. Rust formatting
+  # ─────────────────────────────────────────────────────────────────────────
+  rust-format:
+    name: "🦀 Rust format (rustfmt)"
+    runs-on: ubuntu-latest
+    needs: security-gate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Check formatting
+        working-directory: src-tauri
+        run: cargo fmt --all --check
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 2b. Rust lint — strict clippy with security-relevant lint groups
+  # ─────────────────────────────────────────────────────────────────────────
+  rust-lint:
+    name: "🦀 Rust lint (clippy strict)"
+    runs-on: ubuntu-latest
+    needs: security-gate
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install minimal system deps
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libssl-dev pkg-config
+
+      - name: Clippy — deny warnings + security + pedantic lints
+        working-directory: src-tauri
+        run: |
+          cargo clippy --all-targets --all-features -- \
+            -D warnings \
+            -D clippy::correctness \
+            -D clippy::suspicious \
+            -D clippy::complexity \
+            -D clippy::perf \
+            -W clippy::pedantic \
+            -W clippy::nursery \
+            -D clippy::unwrap_used \
+            -D clippy::expect_used \
+            -D clippy::panic \
+            -D clippy::indexing_slicing \
+            -D clippy::arithmetic_side_effects \
+            -D clippy::integer_division \
+            -D clippy::modulo_arithmetic \
+            -D clippy::shadow_unrelated \
+            -D clippy::wildcard_imports \
+            -D clippy::print_stdout \
+            -D clippy::print_stderr \
+            -W clippy::missing_panics_doc \
+            -W clippy::missing_errors_doc
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 2c. Rust tests + code coverage
+  # ─────────────────────────────────────────────────────────────────────────
+  rust-tests:
+    name: "🦀 Rust tests + coverage"
+    runs-on: ubuntu-22.04
+    needs: security-gate
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install minimal system deps
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libssl-dev pkg-config
+
+      - name: Install cargo-tarpaulin (coverage)
+        run: cargo install cargo-tarpaulin --locked
+
+      - name: Unit + integration tests
+        working-directory: src-tauri
+        run: cargo test --all-features
+
+      - name: Coverage report (fail below 50%)
+        working-directory: src-tauri
+        run: |
+          cargo tarpaulin \
+            --all-features \
+            --timeout 120 \
+            --skip-clean \
+            --out Xml \
+            --output-dir coverage/ \
+            --fail-under 50
+        continue-on-error: false
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: src-tauri/coverage/
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 2d. Frontend: TypeScript strict + ESLint security rules
+  # ─────────────────────────────────────────────────────────────────────────
+  frontend-quality:
+    name: "⚛️  Frontend (tsc strict + ESLint)"
+    runs-on: ubuntu-latest
+    needs: security-gate
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript strict type-check
+        run: npm run build
+
+      - name: ESLint (zero warnings tolerance)
+        run: npm run lint -- --max-warnings 0
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # QUALITY GATE — aggregates Phase 2
+  # ─────────────────────────────────────────────────────────────────────────
+  quality-gate:
+    name: "✅ Quality gate"
+    runs-on: ubuntu-latest
+    needs: [rust-format, rust-lint, rust-tests, frontend-quality]
+    steps:
+      - name: All quality checks passed
+        run: echo "Quality gate passed — this branch is safe to merge."
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 3 — COMPLIANCE SUMMARY
+# Posts a detailed summary comment on pull requests.
+# ═══════════════════════════════════════════════════════════════════════════════
+  pr-summary:
+    name: "📋 PR compliance summary"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: [quality-gate]
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post summary comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              "## ✅ AegisPDF CI — All checks passed",
+              "",
+              "| Check | Status |",
+              "| ----- | ------ |",
+              "| 🔑 Secret scan (gitleaks) | ✅ Clean |",
+              "| 📦 Rust CVE audit | ✅ No known vulnerabilities |",
+              "| 📦 Rust license/ban policy | ✅ Compliant |",
+              "| 📦 npm audit | ✅ No high/critical CVEs |",
+              "| 📦 npm license check | ✅ Permissive only |",
+              "| 🛡️  Trivy (secrets + misconfig) | ✅ No findings |",
+              "| 🦀 rustfmt | ✅ Formatted |",
+              "| 🦀 clippy strict | ✅ No warnings |",
+              "| 🦀 Tests + coverage (≥50%) | ✅ Passing |",
+              "| ⚛️  TypeScript strict | ✅ No type errors |",
+              "| ⚛️  ESLint security | ✅ No warnings |",
+              "",
+              "_This PR is safe to merge._"
+            ].join("\n");
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });

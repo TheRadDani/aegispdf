@@ -1,0 +1,29 @@
+# CODEOWNERS for AegisPDF
+# Every PR must be reviewed by at least one code owner before merging.
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default: all files require review from the core team
+*                                           @aegispdf/core
+
+# Rust backend — requires a Rust-specialist review
+src-tauri/                                  @aegispdf/rust-reviewers @aegispdf/core
+
+# GitHub Actions workflows — any change requires security team sign-off
+.github/workflows/                          @aegispdf/security @aegispdf/core
+
+# Security configuration files
+.gitleaks.toml                              @aegispdf/security
+src-tauri/deny.toml                         @aegispdf/security
+.github/SECURITY.md                         @aegispdf/security
+
+# Dependency manifests — supply chain changes need explicit approval
+Cargo.toml                                  @aegispdf/security @aegispdf/core
+src-tauri/Cargo.toml                        @aegispdf/security @aegispdf/core
+package.json                                @aegispdf/security @aegispdf/core
+package-lock.json                           @aegispdf/security @aegispdf/core
+
+# Frontend source
+src/                                        @aegispdf/frontend @aegispdf/core
+
+# Release configuration
+src-tauri/tauri.conf.json                   @aegispdf/core
