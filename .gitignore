@@ -1,0 +1,23 @@
+node_modules
+dist
+src-tauri/target
+*.log
+
+# Generated icons (created by scripts/gen-icons.sh)
+src-tauri/icons/*.png
+src-tauri/icons/*.ico
+src-tauri/icons/*.icns
+!src-tauri/icons/aegispdf.svg
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Env
+.env
+.env.local
