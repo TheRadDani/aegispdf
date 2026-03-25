@@ -54,6 +54,18 @@ ignore = [
   { id = "RUSTSEC-2024-0422", reason = "atk-sys: GTK3 binding required by Tauri/WebKitGTK; no upstream fix" },
   { id = "RUSTSEC-2025-0057", reason = "fxhash: non-security hash; no CVE; replacement is upstream's responsibility" },
   { id = "RUSTSEC-2024-0429", reason = "glib unsound VariantStrIter: transitive via Tauri/webkit2gtk; no fix in Tauri 2.x ecosystem" },
+  # ── Unmaintained proc-macro-error (RUSTSEC-2024-0370) ─────────────────────────
+  # Transitive dep via tauri macros. No security impact; replacement is upstream's
+  # responsibility.
+  { id = "RUSTSEC-2024-0370", reason = "proc-macro-error: unmaintained transitive dep via tauri; no security impact" },
+  # ── Unmaintained unic-* crates (RUSTSEC-2025-007x / RUSTSEC-2025-009x) ───────
+  # Transitive deps pulled via tauri/servo/webview. No CVE; no upstream fix in
+  # the Tauri 2.x ecosystem.
+  { id = "RUSTSEC-2025-0075", reason = "unic-char-range: unmaintained transitive dep; no upstream fix" },
+  { id = "RUSTSEC-2025-0080", reason = "unic-common: unmaintained transitive dep; no upstream fix" },
+  { id = "RUSTSEC-2025-0081", reason = "unic-char-property: unmaintained transitive dep; no upstream fix" },
+  { id = "RUSTSEC-2025-0098", reason = "unic-ucd-version: unmaintained transitive dep; no upstream fix" },
+  { id = "RUSTSEC-2025-0100", reason = "unic-ucd-ident: unmaintained transitive dep; no upstream fix" },
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -75,8 +87,10 @@ allow = [
   "0BSD",
   "CC0-1.0",
   "Unicode-DFS-2016",
+  "Unicode-3.0",
   "Zlib",
   "OpenSSL",
+  "MPL-2.0",
 ]
 
 # Per-crate exceptions — only when the license is effectively permissive but
@@ -98,8 +112,11 @@ highlight         = "all"
 deny = [
   # Unmaintained TLS — use rustls or Tauri's built-in TLS instead
   { name = "openssl", reason = "use rustls or tauri's built-in TLS" },
-  # Insecure PRNG — rand_core <0.6 has known weaknesses
-  { name = "rand_core", version = "<0.6", reason = "use rand_core >=0.6 for security" },
+  # Insecure PRNG — rand_core <0.6 has known weaknesses.
+  # rand v0.7.3 (via phf_generator) pulls in rand_core 0.5.x along with its
+  # sub-crates (rand_chacha, rand_hc, rand_pcg). All direct parents are listed
+  # as wrappers so the ban fires only if a non-rand crate introduces it.
+  { name = "rand_core", version = "<0.6", reason = "use rand_core >=0.6 for security", wrappers = ["rand", "rand_chacha", "rand_hc", "rand_pcg"] },
   # Unmaintained serialisation — serde is the maintained replacement
   { name = "rustc-serialize", reason = "unmaintained; use serde" },
   # time <0.3 — RUSTSEC-2020-0071 (local time side channel)

@@ -3,6 +3,7 @@ name = "aegispdf"
 version = "0.1.0"
 description = "AegisPDF desktop workspace"
 authors = ["AegisPDF"]
+license = "MIT"
 edition = "2021"
 
 [lib]
