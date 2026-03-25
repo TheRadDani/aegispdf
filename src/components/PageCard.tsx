@@ -37,6 +37,8 @@ export default function PageCard({ documentId, page, zoom, isSelected, annotatio
   const [thumb, setThumb] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasThumbnail = thumb.length > 0;
+  const hasError = error !== null && error.length > 0;
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: page.index
   });
@@ -49,6 +51,7 @@ export default function PageCard({ documentId, page, zoom, isSelected, annotatio
   useEffect(() => {
     let mounted = true;
     setLoading(true);
+    setThumb("");
     setError(null);
     void getPageThumbnail(documentId, page.index, zoom)
       .then((data) => {
@@ -67,7 +70,7 @@ export default function PageCard({ documentId, page, zoom, isSelected, annotatio
     return () => {
       mounted = false;
     };
-  }, [documentId, page.index, zoom]);
+  }, [documentId, page.index, page.page_number, zoom]);
 
   return (
     <article
@@ -81,9 +84,9 @@ export default function PageCard({ documentId, page, zoom, isSelected, annotatio
       <div className="page-thumb">
         {loading ? (
           <span>Loading...</span>
-        ) : error ? (
+        ) : hasError ? (
           <span className="page-error" title={error}>Preview error</span>
-        ) : thumb ? (
+        ) : hasThumbnail ? (
           <>
             <img src={thumb} alt={`Page ${page.page_number}`} draggable={false} />
             <div className="ann-overlay" aria-hidden>
