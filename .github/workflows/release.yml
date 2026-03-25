@@ -52,6 +52,23 @@ jobs:
 
             console.log(`Release enabled for tag ${manualTag}`);
 
+      - name: Checkout tag contents
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.resolve.outputs.target_ref }}
+
+      - name: Verify packaged version matches tag
+        run: |
+          tag_version="${{ steps.resolve.outputs.release_tag }}"
+          tag_version="${tag_version#v}"
+          config_version=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' src-tauri/tauri.conf.json | head -1)
+          package_version=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' package.json | head -1)
+          cargo_version=$(sed -n 's/^version = "\([^"]*\)"$/\1/p' src-tauri/Cargo.toml | head -1)
+
+          test "$config_version" = "$tag_version"
+          test "$package_version" = "$tag_version"
+          test "$cargo_version" = "$tag_version"
+
   # ─────────────────────────────────────────────────────────────────────────
   # Generate Tauri icons once on Linux and reuse across bundle jobs
   # ─────────────────────────────────────────────────────────────────────────

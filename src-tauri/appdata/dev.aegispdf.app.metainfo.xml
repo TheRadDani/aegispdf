@@ -71,10 +71,10 @@
   </developer>
 
   <releases>
-    <release version="0.1.0" date="2024-03-01">
+    <release version="0.2.2" date="2026-03-25">
       <description>
-        <p>Initial release: visual page workspace, merge, split, compress,
-           OCR, annotation sidecar, blank/duplicate detection.</p>
+        <p>Updated Linux packaging metadata, bundled PDFium for release builds,
+           and improved release packaging consistency.</p>
       </description>
     </release>
   </releases>
