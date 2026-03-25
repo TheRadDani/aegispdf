@@ -83,7 +83,8 @@
           "/usr/share/pixmaps/aegispdf.svg":                                      "../assets/aegispdf_logo.svg",
           "/usr/share/icons/hicolor/scalable/apps/dev.aegispdf.app.svg":          "../assets/aegispdf_logo.svg",
           "/usr/share/mime/packages/aegispdf-types.xml":                          "mime/aegispdf-types.xml",
-          "/usr/share/metainfo/dev.aegispdf.app.metainfo.xml":                    "appdata/dev.aegispdf.app.metainfo.xml"
+          "/usr/share/metainfo/dev.aegispdf.app.metainfo.xml":                    "appdata/dev.aegispdf.app.metainfo.xml",
+          "/usr/lib/aegispdf/libpdfium.so":                                       "libs/libpdfium.so"
         }
       },
       "rpm": {
@@ -101,7 +102,8 @@
           "/usr/share/pixmaps/aegispdf.svg":                                      "../assets/aegispdf_logo.svg",
           "/usr/share/icons/hicolor/scalable/apps/dev.aegispdf.app.svg":          "../assets/aegispdf_logo.svg",
           "/usr/share/mime/packages/aegispdf-types.xml":                          "mime/aegispdf-types.xml",
-          "/usr/share/metainfo/dev.aegispdf.app.metainfo.xml":                    "appdata/dev.aegispdf.app.metainfo.xml"
+          "/usr/share/metainfo/dev.aegispdf.app.metainfo.xml":                    "appdata/dev.aegispdf.app.metainfo.xml",
+          "/usr/lib/aegispdf/libpdfium.so":                                       "libs/libpdfium.so"
         },
         "postInstallScript": "rpm/postinstall",
         "preRemoveScript":   "rpm/preremove",

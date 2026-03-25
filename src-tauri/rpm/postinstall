@@ -2,6 +2,12 @@
 # AegisPDF — RPM %post (post-install) script
 set -e
 
+# Register bundled PDFium library for the runtime linker
+if [ -d /usr/lib/aegispdf ]; then
+  echo "/usr/lib/aegispdf" > /etc/ld.so.conf.d/aegispdf.conf
+  ldconfig 2>/dev/null || true
+fi
+
 # Update MIME database so .pdf and .aegis open with AegisPDF
 if command -v update-mime-database >/dev/null 2>&1; then
   update-mime-database /usr/share/mime >/dev/null 2>&1 || true

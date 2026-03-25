@@ -2,6 +2,10 @@
 # AegisPDF — RPM %postun (post-uninstall) script
 set -e
 
+# Remove shared library linker config
+rm -f /etc/ld.so.conf.d/aegispdf.conf
+ldconfig 2>/dev/null || true
+
 # Refresh databases after the package files have been removed
 if command -v update-mime-database >/dev/null 2>&1; then
   update-mime-database /usr/share/mime >/dev/null 2>&1 || true

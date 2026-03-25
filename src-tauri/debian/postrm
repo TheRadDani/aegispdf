@@ -5,6 +5,10 @@ set -e
 
 case "$1" in
   remove|purge)
+    # Remove the shared library linker config added during install.
+    rm -f /etc/ld.so.conf.d/aegispdf.conf
+    ldconfig 2>/dev/null || true
+
     # Refresh MIME and desktop databases so the app no longer appears
     # in Open-With menus after removal.
     if command -v update-mime-database >/dev/null 2>&1; then

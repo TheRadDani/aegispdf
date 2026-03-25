@@ -1,4 +1,5 @@
 use std::io::Cursor;
+use std::path::{Path, PathBuf};
 
 use base64::Engine;
 use image::{DynamicImage, ImageBuffer, ImageFormat, Rgba};
@@ -14,19 +15,61 @@ fn doc_to_bytes(document: &Document) -> anyhow::Result<Vec<u8>> {
     Ok(bytes)
 }
 
-/// Load `PDFium` from a bundled resource path first, falling back to system library.
-fn load_pdfium(bundled_path: Option<&std::path::Path>) -> anyhow::Result<Pdfium> {
-    if let Some(path) = bundled_path {
-        if path.exists() {
-            let bindings = Pdfium::bind_to_library(
-                path.to_str()
-                    .ok_or_else(|| anyhow::anyhow!("invalid PDFium library path"))?,
-            )
-            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
-            return Ok(Pdfium::new(bindings));
+/// Try to locate the PDFium shared library by probing multiple paths in order.
+/// Returns the first existing path, or `None` (which means fall back to system search).
+fn find_pdfium_library(tauri_resource_hint: Option<&Path>) -> Option<PathBuf> {
+    let mut candidates: Vec<PathBuf> = Vec::new();
+
+    // 1. Tauri resource directory (set by lib.rs at startup via BaseDirectory::Resource)
+    if let Some(p) = tauri_resource_hint {
+        candidates.push(p.to_path_buf());
+    }
+
+    // 2. Next to the running executable (works for AppImage, Windows, dev builds)
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(exe_dir) = exe.parent() {
+            #[cfg(target_os = "linux")]
+            {
+                candidates.push(exe_dir.join("libs/libpdfium.so"));
+                candidates.push(exe_dir.join("libpdfium.so"));
+            }
+            #[cfg(target_os = "windows")]
+            {
+                candidates.push(exe_dir.join("libs/pdfium.dll"));
+                candidates.push(exe_dir.join("pdfium.dll"));
+            }
+            #[cfg(target_os = "macos")]
+            {
+                candidates.push(exe_dir.join("libs/libpdfium.dylib"));
+                candidates.push(exe_dir.join("libpdfium.dylib"));
+            }
         }
     }
-    let bindings = Pdfium::bind_to_system_library().map_err(|e| anyhow::anyhow!(e.to_string()))?;
+
+    // 3. Well-known system paths
+    #[cfg(target_os = "linux")]
+    {
+        candidates.push(PathBuf::from("/usr/lib/aegispdf/libpdfium.so"));
+        candidates.push(PathBuf::from("/usr/local/lib/libpdfium.so"));
+        candidates.push(PathBuf::from("/usr/lib/libpdfium.so"));
+        candidates.push(PathBuf::from("/usr/lib/x86_64-linux-gnu/libpdfium.so"));
+    }
+
+    candidates.into_iter().find(|p| p.exists())
+}
+
+/// Load `PDFium`, trying bundled/well-known paths first, then falling back to system library search.
+fn load_pdfium(tauri_resource_hint: Option<&Path>) -> anyhow::Result<Pdfium> {
+    if let Some(lib_path) = find_pdfium_library(tauri_resource_hint) {
+        let path_str = lib_path
+            .to_str()
+            .ok_or_else(|| anyhow::anyhow!("PDFium library path is not valid UTF-8"))?;
+        let bindings =
+            Pdfium::bind_to_library(path_str).map_err(|e| anyhow::anyhow!(e.to_string()))?;
+        return Ok(Pdfium::new(bindings));
+    }
+    let bindings =
+        Pdfium::bind_to_system_library().map_err(|e| anyhow::anyhow!(e.to_string()))?;
     Ok(Pdfium::new(bindings))
 }
 
@@ -40,7 +83,7 @@ pub fn render_page_png(
     document: &Document,
     page_index: usize,
     target_width: i32,
-    pdfium_path: Option<&std::path::Path>,
+    pdfium_path: Option<&Path>,
 ) -> anyhow::Result<Vec<u8>> {
     let pdfium = load_pdfium(pdfium_path)?;
     let bytes = doc_to_bytes(document)?;
@@ -71,7 +114,7 @@ pub fn render_page_thumbnail_base64(
     document: &Document,
     page_index: usize,
     zoom: f32,
-    pdfium_path: Option<&std::path::Path>,
+    pdfium_path: Option<&Path>,
 ) -> anyhow::Result<String> {
     let target_width = (220.0 * zoom).clamp(100.0, 800.0) as i32;
     let png = render_page_png(document, page_index, target_width, pdfium_path)?;
@@ -91,7 +134,7 @@ pub fn page_render_fingerprint(
     document: &Document,
     page_index: usize,
     target_width: i32,
-    pdfium_path: Option<&std::path::Path>,
+    pdfium_path: Option<&Path>,
 ) -> anyhow::Result<(String, f32)> {
     let pdfium = load_pdfium(pdfium_path)?;
     let bytes = doc_to_bytes(document)?;
@@ -105,7 +148,7 @@ pub fn page_render_fingerprint(
     )?;
     let raw = bitmap.as_rgba_bytes();
     let mut hasher = Sha256::new();
-    hasher.update(&raw); // borrow, not move — raw is used again below
+    hasher.update(&raw);
     let hex = format!("{:x}", hasher.finalize());
 
     let mut mad_sum = 0_f64;

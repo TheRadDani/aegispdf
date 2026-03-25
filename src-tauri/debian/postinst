@@ -24,6 +24,14 @@ case "$1" in
       gtk-update-icon-cache -f -t /usr/share/icons/hicolor >/dev/null 2>&1 || true
     fi
 
+    # ── Shared library path ─────────────────────────────────────────────────
+    # Make the bundled libpdfium.so discoverable by the runtime linker so
+    # AegisPDF can render PDF pages immediately after installation.
+    if [ -d /usr/lib/aegispdf ]; then
+      echo "/usr/lib/aegispdf" > /etc/ld.so.conf.d/aegispdf.conf
+      ldconfig 2>/dev/null || true
+    fi
+
     # ── XDG MIME default (opt-in) ───────────────────────────────────────────
     # Registers AegisPDF as a handler for PDF files system-wide so it appears
     # in the "Open With" context menu. Does NOT override the user's current
