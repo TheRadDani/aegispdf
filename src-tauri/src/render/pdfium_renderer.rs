@@ -18,7 +18,7 @@ fn doc_to_bytes(document: &Document) -> anyhow::Result<Vec<u8>> {
 ///
 /// # Errors
 ///
-/// Returns an error if PDFium cannot be loaded, the PDF parsed, the page rendered,
+/// Returns an error if `PDFium` cannot be loaded, the PDF parsed, the page rendered,
 /// or the PNG encoded.
 pub fn render_page_png(
     document: &Document,
