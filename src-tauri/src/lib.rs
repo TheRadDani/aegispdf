@@ -81,5 +81,5 @@ pub fn run() {
             commands::export_pdf_temp,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .unwrap_or_else(|_| std::process::exit(1));
 }

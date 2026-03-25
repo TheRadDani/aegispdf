@@ -1,4 +1,5 @@
 //! Integration tests for merge/split pipeline (no PDFium required).
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};

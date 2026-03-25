@@ -7,15 +7,16 @@ pub fn reorder_pages_by_page_number(
     new_order: &[u32],
 ) -> anyhow::Result<()> {
     let pages_map = document.get_pages();
-    for pn in new_order {
-        if !pages_map.contains_key(pn) {
-            anyhow::bail!("missing page {pn}");
-        }
-    }
-    let kids: Vec<Object> = new_order
+    let kids = new_order
         .iter()
-        .map(|pn| Object::Reference(*pages_map.get(pn).expect("validated")))
-        .collect();
+        .map(|pn| {
+            pages_map
+                .get(pn)
+                .copied()
+                .map(Object::Reference)
+                .ok_or_else(|| anyhow::anyhow!("missing page {pn}"))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
 
     // Extract pages_id in a limited scope so the shared borrow on `document`
     // from `catalog()` is dropped before the mutable borrow below.

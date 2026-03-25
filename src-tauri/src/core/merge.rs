@@ -44,7 +44,7 @@ fn merge_documents(documents: Vec<Document>) -> anyhow::Result<Document> {
 
     for mut doc in documents {
         doc.renumber_objects_with(max_id);
-        max_id = doc.max_id + 1;
+        max_id = doc.max_id.saturating_add(1);
 
         let pages = doc.get_pages();
         for object_id in pages.into_values() {

@@ -1,4 +1,5 @@
 //! Integration tests for core::security (metadata strip, annots strip, auto_clean).
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
 mod common;
 

@@ -1,4 +1,5 @@
 //! Integration tests for core::compress (smart_compress, recompress_streams_roundtrip, zlib_compress_best).
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
 mod common;
 

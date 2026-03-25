@@ -30,9 +30,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn zlib_compress_non_empty() {
+    fn zlib_compress_non_empty() -> std::io::Result<()> {
         let data = b"aegispdf compression smoke test data";
-        let out = zlib_compress_best(data).unwrap();
+        let out = zlib_compress_best(data)?;
         assert!(!out.is_empty());
+        Ok(())
     }
 }

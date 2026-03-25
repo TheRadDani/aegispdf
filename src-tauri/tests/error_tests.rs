@@ -1,4 +1,5 @@
 //! Integration tests for error types: AegisError, AegisErrorResponse, to_invoke_err.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use aegispdf_lib::error::{AegisError, AegisErrorResponse, to_invoke_err};
 

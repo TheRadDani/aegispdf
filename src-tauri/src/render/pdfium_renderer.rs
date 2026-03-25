@@ -3,6 +3,7 @@ use std::io::Cursor;
 use base64::Engine;
 use image::{DynamicImage, ImageBuffer, ImageFormat, Rgba};
 use lopdf::Document;
+#[allow(clippy::wildcard_imports)]
 use pdfium_render::prelude::*;
 use sha2::{Digest, Sha256};
 
@@ -81,14 +82,13 @@ pub fn page_render_fingerprint(
     let mut mad_sum = 0_f64;
     let mut n = 0_u64;
     for chunk in raw.chunks(4) {
-        if chunk.len() < 3 {
-            break;
+        if let [r, g, b, _] = chunk {
+            let r = f64::from(*r);
+            let g = f64::from(*g);
+            let b = f64::from(*b);
+            mad_sum += (255.0 - r).abs() + (255.0 - g).abs() + (255.0 - b).abs();
+            n = n.saturating_add(3);
         }
-        let r = chunk[0] as f64;
-        let g = chunk[1] as f64;
-        let b = chunk[2] as f64;
-        mad_sum += (255.0 - r).abs() + (255.0 - g).abs() + (255.0 - b).abs();
-        n += 3;
     }
     let mad = if n == 0 {
         0.0

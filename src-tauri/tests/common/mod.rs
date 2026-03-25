@@ -1,5 +1,5 @@
 //! Shared test helpers for all integration test crates.
-#![allow(dead_code)]
+#![allow(dead_code, clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};

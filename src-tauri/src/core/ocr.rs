@@ -44,6 +44,6 @@ pub fn append_page_text(path: &Path, page_index: usize, text: &str) -> AegisResu
         .append(true)
         .open(path)
         .map_err(AegisError::from)?;
-    writeln!(f, "--- Page {} ---\n{text}\n", page_index + 1).map_err(AegisError::from)?;
+    writeln!(f, "--- Page {} ---\n{text}\n", page_index.saturating_add(1)).map_err(AegisError::from)?;
     Ok(())
 }
