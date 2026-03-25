@@ -276,3 +276,146 @@ jobs:
           generate_release_notes: true
           files: |
             release-artifacts/**/*
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # APT Repository — publish a signed Debian repo to GitHub Pages
+  #
+  # One-time setup required by the repository maintainer:
+  #   1. Generate a dedicated GPG signing key (no passphrase):
+  #        gpg --batch --gen-key <<EOF
+  #        Key-Type: EdDSA
+  #        Key-Curve: ed25519
+  #        Name-Real: AegisPDF Releases
+  #        Name-Email: releases@aegispdf.dev
+  #        Expire-Date: 0
+  #        %no-protection
+  #        EOF
+  #   2. Export the private key and store as a repository secret:
+  #        gpg --export-secret-keys --armor <KEY_ID> | \
+  #          gh secret set APT_SIGNING_KEY --repo aegispdf/aegispdf
+  #   3. Enable GitHub Pages: Settings → Pages → Branch: gh-pages / root
+  # ─────────────────────────────────────────────────────────────────────────
+  publish-apt-repo:
+    name: Publish APT repository (GitHub Pages)
+    needs: [build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-bundles
+          path: linux-artifacts/
+
+      - name: Clone or initialise gh-pages branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          if git ls-remote --heads "$REMOTE" gh-pages | grep -q gh-pages; then
+            git clone --depth=1 --branch=gh-pages --single-branch "$REMOTE" gh-pages-dir
+          else
+            mkdir gh-pages-dir
+            cd gh-pages-dir
+            git init
+            git remote add origin "$REMOTE"
+            git checkout --orphan gh-pages
+            git rm -rf . 2>/dev/null || true
+            printf '<!doctype html><html><head><meta charset="utf-8"><title>AegisPDF</title></head>\n<body><h1>AegisPDF</h1><p>See <a href="https://github.com/${{ github.repository }}">GitHub</a> for installation instructions.</p></body></html>\n' > index.html
+          fi
+
+      - name: Set up APT pool and copy new .deb
+        run: |
+          mkdir -p gh-pages-dir/apt/pool/main
+          mkdir -p gh-pages-dir/apt/dists/stable/main/binary-amd64
+          find linux-artifacts/ -name "*.deb" -exec cp -v {} gh-pages-dir/apt/pool/main/ \;
+
+      - name: Install apt-utils
+        run: sudo apt-get install -y apt-utils
+
+      - name: Generate Packages index
+        run: |
+          cd gh-pages-dir/apt
+          dpkg-scanpackages --multiversion pool/ \
+            > dists/stable/main/binary-amd64/Packages
+          gzip -kf dists/stable/main/binary-amd64/Packages
+
+      - name: Generate Release file
+        run: |
+          cat > /tmp/apt-release.conf << 'EOF'
+          APT::FTPArchive::Release {
+            Origin "AegisPDF";
+            Label "AegisPDF";
+            Suite "stable";
+            Codename "stable";
+            Architectures "amd64";
+            Components "main";
+            Description "AegisPDF — Privacy-focused offline PDF workspace";
+          };
+          EOF
+          cd gh-pages-dir/apt/dists/stable
+          apt-ftparchive -c /tmp/apt-release.conf release . > Release
+
+      - name: Import GPG key, sign Release, export public key
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+        run: |
+          echo "$APT_SIGNING_KEY" | gpg --batch --import
+          KEY_ID=$(gpg --list-secret-keys --with-colons \
+                   | awk -F: '/^sec/{print $5; exit}')
+          # Detached ASCII-armoured signature (legacy apt clients)
+          gpg --batch --yes --default-key "$KEY_ID" \
+              --armor --detach-sign \
+              -o gh-pages-dir/apt/dists/stable/Release.gpg \
+                 gh-pages-dir/apt/dists/stable/Release
+          # Inline clearsigned (modern apt)
+          gpg --batch --yes --default-key "$KEY_ID" \
+              --clearsign \
+              -o gh-pages-dir/apt/dists/stable/InRelease \
+                 gh-pages-dir/apt/dists/stable/Release
+          # Public key at the Pages root for the install script
+          gpg --export --armor "$KEY_ID" > gh-pages-dir/aegispdf.gpg
+
+      - name: Commit and push gh-pages
+        run: |
+          cd gh-pages-dir
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet \
+            || git commit -m "apt: publish ${{ github.ref_name }}"
+          git push origin gh-pages
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # WinGet — create a manifest PR against microsoft/winget-pkgs
+  #
+  # One-time setup required by the repository maintainer:
+  #   1. Fork microsoft/winget-pkgs into your GitHub account (or the org).
+  #   2. Create a fine-grained PAT with "Contents: Read and Write" on that fork.
+  #   3. Store as repository secret:
+  #        gh secret set WINGET_TOKEN --repo aegispdf/aegispdf
+  #   4. After the first PR is merged, winget-pkgs bots take over for updates.
+  # ─────────────────────────────────────────────────────────────────────────
+  publish-winget:
+    name: Submit to WinGet
+    needs: [build-windows]
+    runs-on: windows-latest
+    # Skip pre-releases (tags containing a hyphen, e.g. v1.0.0-beta.1)
+    if: startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, '-')
+
+    steps:
+      - name: Submit WinGet manifest
+        uses: vedantmgoyal9/winget-releaser@main
+        with:
+          # Package identifier — must match what you register in winget-pkgs.
+          # Before the first release: submit
+          #   manifests/a/AegisPDF/AegisPDF/<version>/ manually once, then this
+          #   action will handle all future updates automatically.
+          identifier: AegisPDF.AegisPDF
+          release-tag: ${{ github.ref_name }}
+          # Only include the NSIS setup installer, not the MSI
+          installers-regex: '.*-setup\.exe$'
+          token: ${{ secrets.WINGET_TOKEN }}
