@@ -1,0 +1,34 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Architectures: amd64
+Codename: stable
+Components: main
+Date: Wed, 25 Mar 2026 16:28:29 +0000
+Description: AegisPDF — Privacy-focused offline PDF workspace
+Label: AegisPDF
+Origin: AegisPDF
+Suite: stable
+MD5Sum:
+ 5db70caffe95a9864cfb05ea4a7cd421              204 Release
+ 6b712a73a2b7af0aa2ad00a0c27d15ed              783 main/binary-amd64/Packages
+ 5f6e81ec59e00a6de1003b0e25107453              536 main/binary-amd64/Packages.gz
+SHA1:
+ 7c90fa5585d62256920e0ac8a29c56732e024364              204 Release
+ 882c8f12af473378579b72f23d91485e09232b4e              783 main/binary-amd64/Packages
+ 38e7d475c1c2be5ca5c931efc05b276ccd4cd3a0              536 main/binary-amd64/Packages.gz
+SHA256:
+ 04f4831b5299a3b732a91c0d06ceb184e60511c20378d384e9059afe4eead7e9              204 Release
+ bf36797dda3e104aa50d0de5e30e771f40f5731c5efa119991bc2067c9f740fe              783 main/binary-amd64/Packages
+ 9f6132dc3f15082cee8dc872b7dedfbadbe2ab7f7f4265b01d58dba15f935260              536 main/binary-amd64/Packages.gz
+SHA512:
+ aac6016760c7fbb4becb33676a754f437365859365c48bd1dc86dd13e460d37181a1f12f45d87e5401397ed80aec537efde5386d5b1af7c85e7ff119aa0bf946              204 Release
+ f3f4c961d015c217c96ca747c282667aa7d6c9f271689dd0d68753012b443fca24dbe189ea9fd5118aec920c13c5c822cf85ae89626638e3155da60c2fb80b1e              783 main/binary-amd64/Packages
+ a514e429208556b5fbbc631bb59154552cfad907e91d389177bea39ce6e48343ed9dfe4d25f9eaa233abc13e20ad97fcb6ab65b38d1ac3a16313f5824f3b4555              536 main/binary-amd64/Packages.gz
+-----BEGIN PGP SIGNATURE-----
+
+iHUEARYKAB0WIQQT/oD7PHZeWOTW79hcooYdLQhQ+AUCacQNLgAKCRBcooYdLQhQ
++MO5APsFr8URAkPrYBC+65+ecpyUgXcYXD3i1eQOj8T6JN7c7QD6A9TZAl7xBggS
+QZp6mxxJZkH/ggKYO3jkuqukNWL8sQg=
+=fRh8
+-----END PGP SIGNATURE-----
