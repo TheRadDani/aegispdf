@@ -53,10 +53,43 @@ jobs:
             }
 
   # ─────────────────────────────────────────────────────────────────────────
+  # Generate Tauri icons once on Linux and reuse across bundle jobs
+  # ─────────────────────────────────────────────────────────────────────────
+  prepare-icons:
+    needs: ci-passed
+    name: Prepare icons
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install icon toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            inkscape \
+            imagemagick \
+            icoutils \
+            icnsutils \
+            librsvg2-bin
+
+      - name: Generate icons from brand logo
+        run: |
+          ls -lh assets/aegispdf_logo.svg
+          chmod +x scripts/gen-icons.sh && ./scripts/gen-icons.sh
+
+      - name: Upload generated icons
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-icons
+          path: src-tauri/icons/
+          if-no-files-found: error
+
+  # ─────────────────────────────────────────────────────────────────────────
   # Linux (.deb, .rpm, .AppImage)
   # ─────────────────────────────────────────────────────────────────────────
   build-linux:
-    needs: ci-passed
+    needs: [ci-passed, prepare-icons]
     name: Linux bundles
     runs-on: ubuntu-22.04
 
@@ -115,10 +148,11 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Generate icons from brand logo
-        run: |
-          ls -lh assets/aegispdf_logo.svg
-          chmod +x scripts/gen-icons.sh && ./scripts/gen-icons.sh
+      - name: Download generated icons
+        uses: actions/download-artifact@v4
+        with:
+          name: tauri-icons
+          path: src-tauri/icons/
 
       - name: Run Rust tests
         working-directory: src-tauri
@@ -149,7 +183,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────
   build-windows:
     name: Windows bundles
-    needs: ci-passed
+    needs: [ci-passed, prepare-icons]
     runs-on: windows-latest
 
     steps:
@@ -182,42 +216,11 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Generate icons from brand logo
-        shell: pwsh
-        run: |
-          $svg = "assets\aegispdf_logo.svg"
-          $out = "src-tauri\icons"
-          if (-not (Test-Path $svg)) { throw "Brand SVG not found: $svg" }
-          New-Item -ItemType Directory -Path $out -Force | Out-Null
-
-          # cairosvg gives reliable SVG→PNG on Windows CI.
-          # ImageMagick on windows-latest has no SVG delegate (librsvg/Inkscape),
-          # so it cannot open SVGs — we reserve magick only for PNG→ICO below.
-          pip install cairosvg --quiet 2>&1 | Out-Null
-
-          $svgAbs = (Resolve-Path $svg).Path
-          $svgUri = 'file:///' + $svgAbs.Replace('\', '/')
-
-          function Render([int]$size, [string]$dest) {
-              $dstAbs = [System.IO.Path]::GetFullPath($dest)
-              $py = "import cairosvg; cairosvg.svg2png(url='$svgUri', write_to=r'$dstAbs', output_width=$size, output_height=$size)"
-              python -c $py
-              if (-not (Test-Path $dest)) {
-                  throw "Failed to render ${size}x${size} PNG to $dest"
-              }
-          }
-
-          Render 32  "$out\32x32.png"
-          Render 128 "$out\128x128.png"
-          Render 256 "$out\256x256.png"
-          Copy-Item "$out\256x256.png" "$out\128x128@2x.png"
-
-          # ICO — magick handles PNG→ICO fine without any delegate libraries
-          & magick "$out\32x32.png" "$out\128x128.png" "$out\256x256.png" "$out\icon.ico"
-          if (-not (Test-Path "$out\icon.ico")) { throw "ICO generation failed" }
-
-          # ICNS placeholder (not needed on Windows builds, but Tauri expects the file)
-          Copy-Item "$out\256x256.png" "$out\icon.icns" -ErrorAction SilentlyContinue
+      - name: Download generated icons
+        uses: actions/download-artifact@v4
+        with:
+          name: tauri-icons
+          path: src-tauri/icons/
 
       - name: Build Tauri bundles (msi + nsis)
         run: npm run tauri build -- --bundles msi,nsis
