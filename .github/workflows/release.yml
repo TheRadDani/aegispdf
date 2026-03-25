@@ -198,9 +198,9 @@ jobs:
                               --export-width=$size --export-height=$size `
                               --export-filename=$dest $svg 2>$null
               } else {
-                  # IMv7: use 'magick' directly, not deprecated 'magick convert'
+                  # IMv7: input file must precede post-processing ops like -resize
                   & magick -background none -density 300 `
-                           -resize "${size}x${size}" $svg $dest
+                           $svg -resize "${size}x${size}" $dest
               }
               if (-not (Test-Path $dest)) {
                   throw "Failed to render ${size}x${size} PNG to $dest"
@@ -295,8 +295,8 @@ jobs:
   #        Expire-Date: 0
   #        %no-protection
   #        EOF
-  #   2. Export the private key and store as a repository secret:
-  #        gpg --export-secret-keys --armor <KEY_ID> | \
+  #   2. Export the private key base64-encoded and store as a repository secret:
+  #        gpg --export-secret-keys --armor <KEY_ID> | base64 -w0 | \
   #          gh secret set APT_SIGNING_KEY --repo aegispdf/aegispdf
   #   3. Enable GitHub Pages: Settings → Pages → Branch: gh-pages / root
   # ─────────────────────────────────────────────────────────────────────────
@@ -368,7 +368,7 @@ jobs:
         env:
           APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
         run: |
-          echo "$APT_SIGNING_KEY" | gpg --batch --import
+          echo "$APT_SIGNING_KEY" | base64 -d | gpg --batch --import
           KEY_ID=$(gpg --list-secret-keys --with-colons \
                    | awk -F: '/^sec/{print $5; exit}')
           # Detached ASCII-armoured signature (legacy apt clients)
