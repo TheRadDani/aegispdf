@@ -28,7 +28,11 @@ fn workspace_file_hash_is_64_hex_chars() {
     let dir = setup("ws_hash");
     let path = common::save_one_page_pdf(&dir, "doc", "Hash");
     let ws = PdfWorkspace::open(&path).unwrap();
-    assert_eq!(ws.file_hash.len(), 64, "SHA-256 hex string must be 64 chars");
+    assert_eq!(
+        ws.file_hash.len(),
+        64,
+        "SHA-256 hex string must be 64 chars"
+    );
     assert!(
         ws.file_hash.chars().all(|c| c.is_ascii_hexdigit()),
         "file_hash must be hex"

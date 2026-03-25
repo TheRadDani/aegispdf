@@ -1,5 +1,10 @@
 //! Shared test helpers for all integration test crates.
-#![allow(dead_code, clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
+#![allow(
+    dead_code,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing
+)]
 
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -37,8 +42,7 @@ pub fn one_page_doc(label: &str) -> Document {
             Operation::new("ET", vec![]),
         ],
     };
-    let content_id =
-        doc.add_object(Stream::new(dictionary! {}, content.encode().unwrap()));
+    let content_id = doc.add_object(Stream::new(dictionary! {}, content.encode().unwrap()));
     let page_id = doc.add_object(dictionary! {
         "Type" => "Page",
         "Parent" => pages_id,

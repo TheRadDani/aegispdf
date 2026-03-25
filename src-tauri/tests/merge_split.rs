@@ -154,11 +154,8 @@ fn split_range_excludes_all_pages_returns_error() {
     let a = dir.join("a.pdf");
     one_page_doc("A").save(&a).unwrap();
     // Page range (5, 10) does not include the single page (page 1)
-    let result = aegispdf_lib::core::split::split_pdf_by_ranges(
-        &a,
-        &[(5, 10)],
-        &[dir.join("out.pdf")],
-    );
+    let result =
+        aegispdf_lib::core::split::split_pdf_by_ranges(&a, &[(5, 10)], &[dir.join("out.pdf")]);
     assert!(result.is_err());
 }
 
@@ -188,8 +185,7 @@ fn delete_pages_invalid_index_returns_error() {
     let mut doc = Document::load(&a).unwrap();
     let page_nums: Vec<u32> = doc.get_pages().keys().copied().collect();
     // index 99 does not exist
-    let result =
-        aegispdf_lib::core::pages::delete_pages_by_indices(&mut doc, &[99], &page_nums);
+    let result = aegispdf_lib::core::pages::delete_pages_by_indices(&mut doc, &[99], &page_nums);
     assert!(result.is_err());
 }
 

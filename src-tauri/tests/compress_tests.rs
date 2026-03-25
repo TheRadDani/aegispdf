@@ -78,5 +78,8 @@ fn zlib_compress_best_produces_empty_output_for_empty_input() {
 fn zlib_compress_output_is_smaller_than_repetitive_input() {
     let data = b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     let compressed = compress::zlib_compress_best(data).unwrap();
-    assert!(compressed.len() < data.len(), "compress should reduce highly repetitive data");
+    assert!(
+        compressed.len() < data.len(),
+        "compress should reduce highly repetitive data"
+    );
 }

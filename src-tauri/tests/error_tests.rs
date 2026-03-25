@@ -1,7 +1,7 @@
 //! Integration tests for error types: AegisError, AegisErrorResponse, to_invoke_err.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use aegispdf_lib::error::{AegisError, AegisErrorResponse, to_invoke_err};
+use aegispdf_lib::error::{to_invoke_err, AegisError, AegisErrorResponse};
 
 // ── AegisError constructors ───────────────────────────────────────────────────
 
@@ -9,7 +9,10 @@ use aegispdf_lib::error::{AegisError, AegisErrorResponse, to_invoke_err};
 fn aegis_error_pdf_helper_sets_code_and_message() {
     let e = AegisError::pdf("load", "could not open file");
     let msg = e.to_string();
-    assert!(msg.contains("could not open file"), "message should appear in Display: {msg}");
+    assert!(
+        msg.contains("could not open file"),
+        "message should appear in Display: {msg}"
+    );
 }
 
 #[test]
@@ -158,8 +161,8 @@ fn error_response_from_external_tool() {
 fn to_invoke_err_returns_valid_json_string() {
     let e = AegisError::InvalidArgument("bad arg".into());
     let s = to_invoke_err(e);
-    let parsed: serde_json::Value = serde_json::from_str(&s)
-        .expect("to_invoke_err must return valid JSON");
+    let parsed: serde_json::Value =
+        serde_json::from_str(&s).expect("to_invoke_err must return valid JSON");
     assert_eq!(parsed["code"], "invalid_argument");
     assert_eq!(parsed["message"], "bad arg");
 }
