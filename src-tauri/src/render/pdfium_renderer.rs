@@ -68,8 +68,7 @@ fn load_pdfium(tauri_resource_hint: Option<&Path>) -> anyhow::Result<Pdfium> {
             Pdfium::bind_to_library(path_str).map_err(|e| anyhow::anyhow!(e.to_string()))?;
         return Ok(Pdfium::new(bindings));
     }
-    let bindings =
-        Pdfium::bind_to_system_library().map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    let bindings = Pdfium::bind_to_system_library().map_err(|e| anyhow::anyhow!(e.to_string()))?;
     Ok(Pdfium::new(bindings))
 }
 
