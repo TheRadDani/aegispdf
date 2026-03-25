@@ -1,24 +1,24 @@
 Architectures: amd64
 Codename: stable
 Components: main
-Date: Wed, 25 Mar 2026 21:51:28 +0000
+Date: Wed, 25 Mar 2026 22:27:16 +0000
 Description: AegisPDF — Privacy-focused offline PDF workspace
 Label: AegisPDF
 Origin: AegisPDF
 Suite: stable
 MD5Sum:
- 46ce9cec4af5f543fd5fe54b58032a20              204 Release
- ac795af635e5e6fd639709026e73d46d              783 main/binary-amd64/Packages
- 709bc81e6303a2232faef3dddae07498              532 main/binary-amd64/Packages.gz
+ 80bd77850a37d0cbaf8dccdf4c997ae1              204 Release
+ 41cea5c38edced5abce9146e17abd78f             1567 main/binary-amd64/Packages
+ 203019866fce834c30f3d5c6b96e287b              666 main/binary-amd64/Packages.gz
 SHA1:
- 3791cf7422b137e3fefc7e6a93338bf2facb985d              204 Release
- 1c25545790a67b786d8f8aa2d670a579da80d6b4              783 main/binary-amd64/Packages
- 3014b7f10afc032267d054767e1260cc2568a9ff              532 main/binary-amd64/Packages.gz
+ 8bbddc6aabcd467aedbfdbb47e06444746c26629              204 Release
+ 96e6f6bb8a93a0a113b3f4707d90ede448cff63c             1567 main/binary-amd64/Packages
+ 419ed2ef4cbab5da9a2f2c7548540049254d91a8              666 main/binary-amd64/Packages.gz
 SHA256:
- 47118932b3cd0ddd01c5e0e305ccef0fea37b3aa8d83bc2c3d9f6403b51b7a4a              204 Release
- 4200b2c20323a0ef59925cb9be4ac254a8ab439f69eb81a84b49ccd795b9ffe7              783 main/binary-amd64/Packages
- dc31f83f98af1a556b42531972cbcc0e803e547aa1392634d8b1e32ee3709970              532 main/binary-amd64/Packages.gz
+ 045a352a37aa94caeee5bda2030e613793cf86e80ed36c5dffe754dffbdb0057              204 Release
+ 8083bf108420dae8a3acf45bcb95dca25fb57e38c8e5cf451f916afb14630025             1567 main/binary-amd64/Packages
+ 146198d6fae41fe41b17cc26a41ece4a24c75e3d827a6629da9a4e26a1babb7a              666 main/binary-amd64/Packages.gz
 SHA512:
- eafec3b1a706b541b697e9c40ffbe1dedfbd479736ffaee35a9315a85a62d1cee02c5c80ca72f01bbb8010c72349dba0708f668b25cb78c7e0e8d54c5bcd856f              204 Release
- f22b5a82919537cceac00741f4e9f78b7147908e2317fecea8657b71196c28b17a2208a0f981c738677b5f811645e8e874343487214f3d41f34b73858baed6fe              783 main/binary-amd64/Packages
- f810f11606832a65484d00ac08eba5133fb2ea26c85e7a10e94a510675e4e6a64cead4ec158dd0e66e00c9734966dac20ae061f49763683db0eaec9e97fa6693              532 main/binary-amd64/Packages.gz
+ 2b2229444c65f3b439e4519d52eef6240504a0269b702b73d4e5f775551981f76514bfc1ce9f922bc1809e81ed97903a3b400fb52643a0d9c9427196e279e2a1              204 Release
+ 230b97c20f6806403811631287113b9bca60236964e91427daaabd18033eb122007ddb11a2288c5e62040d43dac45c1a25c147262348d6992c7b8924c2a4e2a7             1567 main/binary-amd64/Packages
+ f4df9e23cb7fb836d98133926c2eff8cc62b77c453e1c194441485a638e8f7945bed7015066f0824f1b3cff5b1f8f014f414404dee2d1d2297ccfd49a3a15c43              666 main/binary-amd64/Packages.gz
