@@ -71,7 +71,7 @@
   </developer>
 
   <releases>
-    <release version="0.2.2" date="2026-03-25">
+    <release version="0.2.3" date="2026-03-25">
       <description>
         <p>Updated Linux packaging metadata, bundled PDFium for release builds,
            and improved release packaging consistency.</p>
