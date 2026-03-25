@@ -17,6 +17,7 @@ import type { PageAnalysis } from "./types";
 export default function App() {
   const [zoom, setZoom] = useState(1);
   const [analysis, setAnalysis] = useState<PageAnalysis[] | null>(null);
+  const [statusMsg, setStatusMsg] = useState("");
   const { lastEvent } = useJobEvents();
   const {
     doc,
@@ -102,7 +103,14 @@ export default function App() {
       defaultPath: "aegispdf-output.pdf"
     });
     if (typeof outputPath === "string") {
-      await savePdf(outputPath);
+      try {
+        setStatusMsg("Saving…");
+        await savePdf(outputPath);
+        setStatusMsg("Saved successfully");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setStatusMsg(`Save failed: ${msg}`);
+      }
     }
   };
 
@@ -117,7 +125,14 @@ export default function App() {
       defaultPath: "merged.pdf"
     });
     if (typeof outputPath === "string") {
-      await mergePdfPaths(files, outputPath);
+      try {
+        setStatusMsg("Merging…");
+        await mergePdfPaths(files, outputPath);
+        setStatusMsg("Merge complete");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setStatusMsg(`Merge failed: ${msg}`);
+      }
     }
   };
 
@@ -125,17 +140,38 @@ export default function App() {
     if (!doc) {return;}
     const dir = await open({ directory: true, title: "Output folder for split pages" });
     if (typeof dir !== "string") {return;}
-    const tmp = await exportPdfTemp(doc.document_id);
-    await splitPdfEachPage(tmp, dir);
+    try {
+      setStatusMsg("Splitting…");
+      const tmp = await exportPdfTemp(doc.document_id);
+      await splitPdfEachPage(tmp, dir);
+      setStatusMsg("Split complete");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setStatusMsg(`Split failed: ${msg}`);
+    }
   };
 
   const onCompress = async () => {
-    await compress(true);
+    try {
+      setStatusMsg("Compressing…");
+      await compress(true);
+      setStatusMsg("Compression complete");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setStatusMsg(`Compress failed: ${msg}`);
+    }
   };
 
   const onClean = async () => {
     const strip = window.confirm("Also strip embedded PDF annotations from the working copy?");
-    await autoClean(strip);
+    try {
+      setStatusMsg("Cleaning…");
+      await autoClean(strip);
+      setStatusMsg("Clean complete");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setStatusMsg(`Clean failed: ${msg}`);
+    }
   };
 
   const onOcr = async () => {
@@ -208,6 +244,8 @@ export default function App() {
     });
   };
 
+  const displayHint = statusMsg || jobHint;
+
   return (
     <main className="app-shell">
       <Toolbar
@@ -222,7 +260,7 @@ export default function App() {
         onAnalyze={onAnalyze}
         onAnnotate={onAnnotateToolbar}
         hasDocument={!!doc}
-        jobHint={jobHint}
+        jobHint={displayHint}
       />
       <div className="content">
         <section className="workspace">

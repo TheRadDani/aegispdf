@@ -36,6 +36,7 @@ function HighlightOverlay({ payload }: { payload: Record<string, unknown> }) {
 export default function PageCard({ documentId, page, zoom, isSelected, annotations, onSelect }: PageCardProps) {
   const [thumb, setThumb] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: page.index
   });
@@ -48,9 +49,17 @@ export default function PageCard({ documentId, page, zoom, isSelected, annotatio
   useEffect(() => {
     let mounted = true;
     setLoading(true);
+    setError(null);
     void getPageThumbnail(documentId, page.index, zoom)
       .then((data) => {
         if (mounted) {setThumb(data);}
+      })
+      .catch((err: unknown) => {
+        if (mounted) {
+          const msg = err instanceof Error ? err.message : String(err);
+          setError(msg);
+          console.error(`Thumbnail failed for page ${page.page_number}:`, msg);
+        }
       })
       .finally(() => {
         if (mounted) {setLoading(false);}
@@ -72,6 +81,8 @@ export default function PageCard({ documentId, page, zoom, isSelected, annotatio
       <div className="page-thumb">
         {loading ? (
           <span>Loading...</span>
+        ) : error ? (
+          <span className="page-error" title={error}>Preview error</span>
         ) : thumb ? (
           <>
             <img src={thumb} alt={`Page ${page.page_number}`} draggable={false} />
