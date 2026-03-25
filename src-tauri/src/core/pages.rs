@@ -34,8 +34,8 @@ pub fn reorder_pages_by_page_number(
 
     let dict = document.get_dictionary_mut(pages_id)?;
     dict.set(b"Kids", Object::Array(kids));
-    let count = i64::try_from(new_order.len())
-        .map_err(|e| anyhow::anyhow!("page count overflow: {e}"))?;
+    let count =
+        i64::try_from(new_order.len()).map_err(|e| anyhow::anyhow!("page count overflow: {e}"))?;
     dict.set(b"Count", Object::Integer(count));
     Ok(())
 }
