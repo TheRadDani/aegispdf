@@ -24,11 +24,11 @@ def png_chunk(tag: bytes, data: bytes) -> bytes:
     return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", crc)
 
 
-def make_png(size: int, rgb: tuple = (70, 130, 212)) -> bytes:
-    """Minimal solid-colour RGB PNG, no ancillary chunks."""
-    ihdr = struct.pack(">IIBBBBB", size, size, 8, 2, 0, 0, 0)
-    # Each row: filter byte 0x00 + RGB pixels
-    row = bytes([0]) + bytes(rgb) * size
+def make_png(size: int, rgba: tuple = (70, 130, 212, 255)) -> bytes:
+    """Minimal solid-colour RGBA PNG (colour type 6 — required by tauri::generate_context!)."""
+    ihdr = struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0)  # 6 = RGBA
+    # Each row: filter byte 0x00 + RGBA pixels
+    row = bytes([0]) + bytes(rgba) * size
     idat = zlib.compress(row * size, level=9)
     return (
         b"\x89PNG\r\n\x1a\n"

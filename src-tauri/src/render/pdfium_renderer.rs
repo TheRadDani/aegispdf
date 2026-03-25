@@ -59,7 +59,7 @@ pub fn page_render_fingerprint(document: &Document, page_index: usize, target_wi
     )?;
     let raw = bitmap.as_rgba_bytes();
     let mut hasher = Sha256::new();
-    hasher.update(raw);
+    hasher.update(&raw);      // borrow, not move — raw is used again below
     let hex = format!("{:x}", hasher.finalize());
 
     let mut mad_sum = 0_f64;
