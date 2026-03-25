@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 
 use core::pdf::PdfWorkspace;
+use tauri::path::BaseDirectory;
 use tauri::{Emitter, Manager};
 
 pub use error::{AegisError, AegisErrorResponse};
@@ -24,6 +25,9 @@ impl Default for Workspaces {
         }
     }
 }
+
+/// Resolved path to the bundled PDFium shared library (if present).
+pub struct PdfiumPath(pub Option<std::path::PathBuf>);
 
 /// Extract the first file-path argument that looks like a PDF or .aegis file.
 /// Used when the OS launches `AegisPDF` via a file association (e.g. double-click
@@ -53,6 +57,18 @@ pub fn run() {
         .setup(move |app| {
             let handle = app.handle().clone();
             app.manage(Workspaces::default());
+
+            let pdfium_path = {
+                #[cfg(target_os = "linux")]
+                let lib_name = "libs/libpdfium.so";
+                #[cfg(target_os = "windows")]
+                let lib_name = "libs/pdfium.dll";
+                #[cfg(target_os = "macos")]
+                let lib_name = "libs/libpdfium.dylib";
+                app.path().resolve(lib_name, BaseDirectory::Resource).ok()
+            };
+            app.manage(PdfiumPath(pdfium_path));
+
             app.manage(jobs::JobQueue::spawn(handle.clone()));
 
             if let Some(path) = initial_file {

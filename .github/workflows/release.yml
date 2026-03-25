@@ -135,6 +135,11 @@ jobs:
           sudo cp /tmp/lib/libpdfium.so /usr/local/lib/
           sudo ldconfig
 
+      - name: Bundle PDFium for distribution
+        run: |
+          mkdir -p src-tauri/libs
+          cp /usr/local/lib/libpdfium.so src-tauri/libs/
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -165,7 +170,7 @@ jobs:
         run: cargo test
 
       - name: Build Tauri bundles (deb + rpm + appimage)
-        run: npm run tauri build -- --bundles deb,rpm,appimage
+        run: npm run tauri build -- --bundles deb,rpm,appimage --config '{"bundle":{"resources":{"libs/libpdfium.so":"libs/libpdfium.so"}}}'
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -206,6 +211,12 @@ jobs:
           tar -xzf "$env:TEMP\pdfium.tgz" -C "$env:TEMP"
           Copy-Item "$env:TEMP\bin\pdfium.dll" "$env:SystemRoot\System32\pdfium.dll" -Force
 
+      - name: Bundle PDFium for distribution
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path src-tauri\libs -Force | Out-Null
+          Copy-Item "$env:TEMP\bin\pdfium.dll" src-tauri\libs\pdfium.dll
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -232,7 +243,7 @@ jobs:
           path: src-tauri/icons/
 
       - name: Build Tauri bundles (msi + nsis)
-        run: npm run tauri build -- --bundles msi,nsis
+        run: npm run tauri build -- --bundles msi,nsis --config '{"bundle":{"resources":{"libs/pdfium.dll":"libs/pdfium.dll"}}}'
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}

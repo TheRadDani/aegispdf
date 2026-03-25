@@ -66,6 +66,7 @@ pub fn get_page_thumbnail(
     page_index: usize,
     zoom: f32,
     state: State<'_, Workspaces>,
+    pdfium_path: State<'_, crate::PdfiumPath>,
 ) -> Result<String, AegisErrorResponse> {
     let mut lock = workspaces(&state).map_err(AegisErrorResponse::from)?;
     let workspace = lock
@@ -75,6 +76,7 @@ pub fn get_page_thumbnail(
         &workspace.document,
         page_index,
         zoom,
+        pdfium_path.0.as_deref(),
     )
     .map_err(|e| AegisErrorResponse::from(AegisError::Render(e.to_string())))
 }
