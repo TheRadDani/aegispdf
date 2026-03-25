@@ -4,31 +4,31 @@ Hash: SHA512
 Architectures: amd64
 Codename: stable
 Components: main
-Date: Wed, 25 Mar 2026 22:27:16 +0000
+Date: Wed, 25 Mar 2026 23:14:23 +0000
 Description: AegisPDF — Privacy-focused offline PDF workspace
 Label: AegisPDF
 Origin: AegisPDF
 Suite: stable
 MD5Sum:
- 80bd77850a37d0cbaf8dccdf4c997ae1              204 Release
- 41cea5c38edced5abce9146e17abd78f             1567 main/binary-amd64/Packages
- 203019866fce834c30f3d5c6b96e287b              666 main/binary-amd64/Packages.gz
+ b54e6236ab22d21d8c6fefe0e79c0ddd              204 Release
+ 0723aba274476b5820e1bdaa4f87ca38             2351 main/binary-amd64/Packages
+ c4100873ddb57702dcfb25afec76225c              779 main/binary-amd64/Packages.gz
 SHA1:
- 8bbddc6aabcd467aedbfdbb47e06444746c26629              204 Release
- 96e6f6bb8a93a0a113b3f4707d90ede448cff63c             1567 main/binary-amd64/Packages
- 419ed2ef4cbab5da9a2f2c7548540049254d91a8              666 main/binary-amd64/Packages.gz
+ 3d488622616a2770083ede498ec73c326cacbbbd              204 Release
+ c740a40edd1f299df08a968a5bb548d797d64ac5             2351 main/binary-amd64/Packages
+ 0b2638d1d7ea2830593627890a09bc6cbc4e85c7              779 main/binary-amd64/Packages.gz
 SHA256:
- 045a352a37aa94caeee5bda2030e613793cf86e80ed36c5dffe754dffbdb0057              204 Release
- 8083bf108420dae8a3acf45bcb95dca25fb57e38c8e5cf451f916afb14630025             1567 main/binary-amd64/Packages
- 146198d6fae41fe41b17cc26a41ece4a24c75e3d827a6629da9a4e26a1babb7a              666 main/binary-amd64/Packages.gz
+ 4d8beadc8923ce36598448f5e8e58e123d825cc276a94cf8c5eb3f8f389d6291              204 Release
+ b5d4ac4a416ae86cee40120e2ece11281708a3ea0e7e1a2dc9afd9a3c0144378             2351 main/binary-amd64/Packages
+ b7c821b1d4b25eaabec2f1a4a596c6c79c68c413366aedfa5ee5ba39b7012c87              779 main/binary-amd64/Packages.gz
 SHA512:
- 2b2229444c65f3b439e4519d52eef6240504a0269b702b73d4e5f775551981f76514bfc1ce9f922bc1809e81ed97903a3b400fb52643a0d9c9427196e279e2a1              204 Release
- 230b97c20f6806403811631287113b9bca60236964e91427daaabd18033eb122007ddb11a2288c5e62040d43dac45c1a25c147262348d6992c7b8924c2a4e2a7             1567 main/binary-amd64/Packages
- f4df9e23cb7fb836d98133926c2eff8cc62b77c453e1c194441485a638e8f7945bed7015066f0824f1b3cff5b1f8f014f414404dee2d1d2297ccfd49a3a15c43              666 main/binary-amd64/Packages.gz
+ f1638528ad28f6bb5f88f9cb83395506a5ae1a721e4ca57ca88041bf95e3f3438b8b0fad353470c41dd3248ebf13cfd011bebdf8fdae2326f6d697a0644acb2b              204 Release
+ a433508ac1bbf032e78103313f6a1034544edf741c78d62f08fa4e636e894f1943df924182e893768b1d731424b06f48437f0d38b285807b4f21a63b7b687310             2351 main/binary-amd64/Packages
+ a32119429baf9f4648e4a1fb43eb0b68f3a8ef1aa2891002da818e04f4669359b0dc48ee8d55095be02ae6b0714f75d95aabc9e45f2968edfc2149051a53796d              779 main/binary-amd64/Packages.gz
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQQT/oD7PHZeWOTW79hcooYdLQhQ+AUCacRhRAAKCRBcooYdLQhQ
-+DS0AQCvS4mz/8FjTzRP/4dY2jbdqqcX3aZdtldY924crAl+fQEAtHJtnv0KLblc
-YQ0I17Rl2nrg3Y4zP8szFFDDl2iLdAM=
-=uX1q
+iHUEARYKAB0WIQQT/oD7PHZeWOTW79hcooYdLQhQ+AUCacRsTwAKCRBcooYdLQhQ
++EM+AP97I5qZnKxgJ6jgIM5fpSgfSDQ7vDlyToyeb9a43py/WAEA+/nJGkFnRKGI
+EqFhBtnwvzN33uvt2NxDLynNVQ5CRgk=
+=jyBb
 -----END PGP SIGNATURE-----

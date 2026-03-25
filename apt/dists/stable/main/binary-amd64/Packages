@@ -30,3 +30,19 @@ Homepage: https://github.com/aegispdf/aegispdf
 Description: Privacy-focused offline PDF workspace
  AegisPDF is a free, open-source, cross-platform PDF workspace. Open, render, reorder, merge, split, compress, OCR and annotate PDFs with a fast Rust/Tauri backend — fully offline, no cloud dependency.
 
+Package: aegis-pdf
+Version: 0.2.3
+Architecture: amd64
+Maintainer: AegisPDF
+Installed-Size: 22442
+Depends: libwebkit2gtk-4.1-0, libgtk-3-0, libglib2.0-0, libgdk-pixbuf-2.0-0, libxcb1, libxcb-render0, xdg-utils, libwebkit2gtk-4.1-0, libgtk-3-0
+Filename: pool/main/AegisPDF_0.2.3_amd64.deb
+Size: 7841118
+MD5sum: 02322fad6a1b9c9e4ebddba148dbc1f2
+SHA1: 510e4dfbc3aa12aa50657d42a4bec27e6995738a
+SHA256: cb98e67cf05065456e7a6a3e698cf94a885b6c4b9cb000033c92fbd7208442c2
+Priority: optional
+Homepage: https://github.com/aegispdf/aegispdf
+Description: Privacy-focused offline PDF workspace
+ AegisPDF is a free, open-source, cross-platform PDF workspace. Open, render, reorder, merge, split, compress, OCR and annotate PDFs with a fast Rust/Tauri backend — fully offline, no cloud dependency.
+
