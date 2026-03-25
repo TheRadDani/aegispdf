@@ -1,4 +1,4 @@
-//! Integration tests for core::annotations (AnnotationStore sidecar lifecycle).
+//! Integration tests for `core::annotations` (`AnnotationStore` sidecar lifecycle).
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
 mod common;

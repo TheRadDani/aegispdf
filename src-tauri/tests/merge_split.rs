@@ -1,4 +1,4 @@
-//! Integration tests for merge/split pipeline (no PDFium required).
+//! Integration tests for merge/split pipeline (no `PDFium` required).
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
 use std::path::PathBuf;
@@ -38,7 +38,7 @@ fn one_page_doc(label: &str) -> Document {
         ],
     };
     let content_id = doc.add_object(Stream::new(dictionary! {}, content.encode().unwrap()));
-    let page_id = doc.add_object(dictionary! {
+    let page_obj_id = doc.add_object(dictionary! {
         "Type" => "Page",
         "Parent" => pages_id,
         "Contents" => content_id,
@@ -47,7 +47,7 @@ fn one_page_doc(label: &str) -> Document {
     });
     let pages = dictionary! {
         "Type" => "Pages",
-        "Kids" => vec![page_id.into()],
+        "Kids" => vec![page_obj_id.into()],
         "Count" => 1,
     };
     doc.objects.insert(pages_id, Object::Dictionary(pages));

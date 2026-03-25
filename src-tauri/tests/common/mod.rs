@@ -43,7 +43,7 @@ pub fn one_page_doc(label: &str) -> Document {
         ],
     };
     let content_id = doc.add_object(Stream::new(dictionary! {}, content.encode().unwrap()));
-    let page_id = doc.add_object(dictionary! {
+    let page_obj_id = doc.add_object(dictionary! {
         "Type" => "Page",
         "Parent" => pages_id,
         "Contents" => content_id,
@@ -52,7 +52,7 @@ pub fn one_page_doc(label: &str) -> Document {
     });
     let pages = dictionary! {
         "Type" => "Pages",
-        "Kids" => vec![page_id.into()],
+        "Kids" => vec![page_obj_id.into()],
         "Count" => 1,
     };
     doc.objects.insert(pages_id, Object::Dictionary(pages));
@@ -65,14 +65,14 @@ pub fn one_page_doc(label: &str) -> Document {
 }
 
 /// Save a one-page PDF to `path` and return the path.
-pub fn save_one_page_pdf(dir: &PathBuf, name: &str, label: &str) -> PathBuf {
+pub fn save_one_page_pdf(dir: &std::path::Path, name: &str, label: &str) -> PathBuf {
     let path = dir.join(format!("{name}.pdf"));
     one_page_doc(label).save(&path).unwrap();
     path
 }
 
 /// Create a two-page merged PDF in `dir` and return the path to it.
-pub fn merged_two_page_pdf(dir: &PathBuf) -> PathBuf {
+pub fn merged_two_page_pdf(dir: &std::path::Path) -> PathBuf {
     let a = save_one_page_pdf(dir, "a", "Page A");
     let b = save_one_page_pdf(dir, "b", "Page B");
     let merged = dir.join("merged.pdf");

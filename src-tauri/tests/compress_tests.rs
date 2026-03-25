@@ -1,4 +1,4 @@
-//! Integration tests for core::compress (smart_compress, recompress_streams_roundtrip, zlib_compress_best).
+//! Integration tests for `core::compress` (`smart_compress`, `recompress_streams_roundtrip`, `zlib_compress_best`).
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
 mod common;
@@ -7,7 +7,7 @@ use lopdf::Document;
 
 use aegispdf_lib::core::compress;
 
-fn make_pdf_file(dir: &std::path::PathBuf, name: &str) -> std::path::PathBuf {
+fn make_pdf_file(dir: &std::path::Path, name: &str) -> std::path::PathBuf {
     common::save_one_page_pdf(dir, name, name)
 }
 

@@ -40,7 +40,7 @@ impl PdfWorkspace {
     }
 
     #[must_use]
-    pub fn page_count(&self) -> usize {
+    pub const fn page_count(&self) -> usize {
         self.ordered_page_numbers.len()
     }
 

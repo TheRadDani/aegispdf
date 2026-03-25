@@ -5,7 +5,7 @@ use flate2::Compression;
 use lopdf::Document;
 use std::io::Write;
 
-/// Prune orphans, drop empty streams, then recompress streams via lopdf (zlib /FlateDecode).
+/// Prune orphans, drop empty streams, then recompress streams via lopdf (zlib /`FlateDecode`).
 pub fn smart_compress(document: &mut Document) {
     document.delete_zero_length_streams();
     document.prune_objects();

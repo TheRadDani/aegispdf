@@ -1,4 +1,4 @@
-#![allow(clippy::needless_pass_by_value, clippy::significant_drop_tightly)]
+#![allow(clippy::needless_pass_by_value, clippy::significant_drop_tightening)]
 
 use std::path::PathBuf;
 
@@ -189,7 +189,7 @@ pub fn split_pdf_each_page(
     let mut outs = Vec::new();
     for p in pages {
         let out = dir.join(format!("page_{p:03}.pdf"));
-        split::split_pdf_by_ranges(&src, &[(p, p)], &[out.clone()])
+        split::split_pdf_by_ranges(&src, &[(p, p)], std::slice::from_ref(&out))
             .map_err(AegisErrorResponse::from)?;
         outs.push(out.to_string_lossy().to_string());
     }

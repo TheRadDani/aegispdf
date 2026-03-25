@@ -69,7 +69,7 @@ pub fn render_page_thumbnail_base64(
 ///
 /// # Errors
 ///
-/// Returns an error if PDFium cannot be loaded, the PDF parsed, or the page rendered.
+/// Returns an error if `PDFium` cannot be loaded, the PDF parsed, or the page rendered.
 pub fn page_render_fingerprint(
     document: &Document,
     page_index: usize,

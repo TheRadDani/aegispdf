@@ -94,8 +94,7 @@ fn merge_documents(documents: Vec<Document>) -> anyhow::Result<Document> {
                     ));
                 }
             }
-            b"Page" => {}
-            b"Outlines" | b"Outline" => {}
+            b"Page" | b"Outlines" | b"Outline" => {}
             _ => {
                 document.objects.insert(object_id, object);
             }

@@ -62,10 +62,12 @@ struct QueuedJob {
 pub struct JobQueue {
     tx: mpsc::Sender<QueuedJob>,
     #[allow(dead_code)]
+    #[allow(dead_code)] // drop-holder: keeps the worker thread alive
     worker: thread::JoinHandle<()>,
 }
 
 impl JobQueue {
+    #[must_use]
     pub fn spawn(app: AppHandle) -> Self {
         let (tx, rx) = mpsc::channel::<QueuedJob>();
         let worker = thread::spawn(move || {
@@ -102,6 +104,9 @@ impl JobQueue {
         Self { tx, worker }
     }
 
+    /// # Errors
+    ///
+    /// Returns `Err` if the job channel is closed (worker thread has exited).
     pub fn submit(&self, kind: JobKind) -> Result<String, String> {
         let id = Uuid::new_v4().to_string();
         self.tx
