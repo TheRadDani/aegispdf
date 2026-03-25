@@ -243,35 +243,16 @@ jobs:
           if-no-files-found: warn
 
   # ─────────────────────────────────────────────────────────────────────────
-  # GitHub Release — attach all artifacts when triggered by a tag
+  # GitHub Release — create the release record once, then upload platform
+  # artifacts independently so one platform does not block the other.
   # ─────────────────────────────────────────────────────────────────────────
-  release:
+  create-release:
     name: Create GitHub Release
-    needs: [build-linux, build-windows]
+    needs: [ci-passed]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Download Linux artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-bundles
-          path: release-artifacts/linux/
-
-      - name: Download Windows artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-bundles
-          path: release-artifacts/windows/
-
-      - name: Generate checksums
-        run: |
-          cd release-artifacts
-          find . -type f | sort | xargs sha256sum > SHA256SUMS.txt
-          cat SHA256SUMS.txt
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -279,8 +260,60 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
+
+  upload-linux-release-assets:
+    name: Upload Linux release assets
+    needs: [create-release, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-bundles
+          path: release-artifacts/linux/
+
+      - name: Generate Linux checksums
+        run: |
+          cd release-artifacts
+          find linux -type f | sort | xargs sha256sum > SHA256SUMS-linux.txt
+          cat SHA256SUMS-linux.txt
+
+      - name: Upload Linux artifacts to release
+        uses: softprops/action-gh-release@v2
+        with:
+          append_body: true
           files: |
-            release-artifacts/**/*
+            release-artifacts/linux/**/*
+            release-artifacts/SHA256SUMS-linux.txt
+
+  upload-windows-release-assets:
+    name: Upload Windows release assets
+    needs: [create-release, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-bundles
+          path: release-artifacts/windows/
+
+      - name: Generate Windows checksums
+        run: |
+          cd release-artifacts
+          find windows -type f | sort | xargs sha256sum > SHA256SUMS-windows.txt
+          cat SHA256SUMS-windows.txt
+
+      - name: Upload Windows artifacts to release
+        uses: softprops/action-gh-release@v2
+        with:
+          append_body: true
+          files: |
+            release-artifacts/windows/**/*
+            release-artifacts/SHA256SUMS-windows.txt
 
   # ─────────────────────────────────────────────────────────────────────────
   # APT Repository — publish a signed Debian repo to GitHub Pages
