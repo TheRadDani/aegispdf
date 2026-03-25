@@ -10,6 +10,11 @@ use tempfile::NamedTempFile;
 use crate::error::{AegisError, AegisResult};
 
 /// Run Tesseract on a PNG byte slice; returns UTF-8 text.
+///
+/// # Errors
+///
+/// Returns [`AegisError`] if a temp file cannot be created, Tesseract is not found,
+/// or the process exits with a non-zero status.
 pub fn ocr_png_bytes(png: &[u8], lang: &str) -> AegisResult<String> {
     let mut tmp = NamedTempFile::with_suffix(".png").map_err(AegisError::from)?;
     tmp.write_all(png).map_err(AegisError::from)?;
@@ -38,6 +43,10 @@ pub fn ocr_png_bytes(png: &[u8], lang: &str) -> AegisResult<String> {
 }
 
 /// Append per-page OCR text to a UTF-8 file (simple text layer export).
+///
+/// # Errors
+///
+/// Returns [`AegisError`] if the file cannot be opened or written to.
 pub fn append_page_text(path: &Path, page_index: usize, text: &str) -> AegisResult<()> {
     let mut f = fs::OpenOptions::new()
         .create(true)

@@ -15,6 +15,10 @@ fn pdf_type(object: &Object) -> Option<&[u8]> {
 }
 
 /// Merge PDFs in path order into `output`. Rewrites object IDs to avoid collisions.
+///
+/// # Errors
+/// Returns `AegisError::InvalidArgument` if `inputs` is empty, or `AegisError::Merge`
+/// if any PDF cannot be loaded or the merged file cannot be saved.
 pub fn merge_pdfs(inputs: &[PathBuf], output: &PathBuf) -> AegisResult<()> {
     if inputs.is_empty() {
         return Err(AegisError::InvalidArgument("no input PDFs".into()));
@@ -34,6 +38,7 @@ pub fn merge_pdfs(inputs: &[PathBuf], output: &PathBuf) -> AegisResult<()> {
     Ok(())
 }
 
+#[allow(clippy::too_many_lines)]
 fn merge_documents(documents: Vec<Document>) -> anyhow::Result<Document> {
     let mut max_id = 1_u32;
     // Preserve page order (not ObjectId sort order).
@@ -72,9 +77,9 @@ fn merge_documents(documents: Vec<Document>) -> anyhow::Result<Document> {
             b"Pages" => {
                 if let Ok(dictionary) = object.as_dict() {
                     let mut dictionary = dictionary.clone();
-                    if let Some((_, ref object)) = pages_object {
-                        if let Ok(old_dictionary) = object.as_dict() {
-                            for (k, v) in old_dictionary.as_hashmap().iter() {
+                    if let Some((_, ref prev_obj)) = pages_object {
+                        if let Ok(old_dictionary) = prev_obj.as_dict() {
+                            for (k, v) in old_dictionary.as_hashmap() {
                                 dictionary.as_hashmap_mut().insert(k.clone(), v.clone());
                             }
                         }
@@ -97,7 +102,7 @@ fn merge_documents(documents: Vec<Document>) -> anyhow::Result<Document> {
         }
     }
 
-    let (page_id, page_object) =
+    let (page_id, pages_root) =
         pages_object.ok_or_else(|| anyhow::anyhow!("pages root not found"))?;
     let (catalog_id, catalog_object) =
         catalog_object.ok_or_else(|| anyhow::anyhow!("catalog root not found"))?;
@@ -112,9 +117,11 @@ fn merge_documents(documents: Vec<Document>) -> anyhow::Result<Document> {
         }
     }
 
-    if let Ok(dictionary) = page_object.as_dict() {
+    if let Ok(dictionary) = pages_root.as_dict() {
         let mut dictionary = dictionary.clone();
-        dictionary.set(b"Count", Object::Integer(documents_pages.len() as i64));
+        let page_count = i64::try_from(documents_pages.len())
+            .map_err(|e| anyhow::anyhow!("page count overflow: {e}"))?;
+        dictionary.set(b"Count", Object::Integer(page_count));
         dictionary.set(
             b"Kids",
             Object::Array(
@@ -139,9 +146,8 @@ fn merge_documents(documents: Vec<Document>) -> anyhow::Result<Document> {
     }
 
     document.trailer.set(b"Root", Object::Reference(catalog_id));
-    use std::convert::TryFrom;
     document.max_id = u32::try_from(document.objects.len())
-        .map_err(|_| AegisError::InvalidArgument("Too many objects".to_string()))?;
+        .map_err(|_| anyhow::anyhow!("object count overflow"))?;
     document.renumber_objects();
     document.adjust_zero_pages();
     Ok(document)

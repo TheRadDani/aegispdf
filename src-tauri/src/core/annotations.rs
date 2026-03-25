@@ -30,12 +30,17 @@ pub struct AnnotationStore {
 
 impl AnnotationStore {
     /// Sidecar path: `document.pdf` → `document.aegis`
+    #[must_use]
     pub fn sidecar_path(pdf_path: &Path) -> PathBuf {
         let mut p = pdf_path.to_path_buf();
         p.set_extension("aegis");
         p
     }
 
+    /// # Errors
+    ///
+    /// Returns [`AegisError`] if the sidecar file cannot be read, parsed as JSON,
+    /// or if the PDF hash does not match.
     pub fn load_for_pdf(pdf_path: &Path, expected_hash: &str) -> AegisResult<Self> {
         let path = Self::sidecar_path(pdf_path);
         if !path.exists() {
@@ -45,7 +50,7 @@ impl AnnotationStore {
             });
         }
         let text = fs::read_to_string(&path).map_err(AegisError::from)?;
-        let store: AnnotationStore =
+        let store: Self =
             serde_json::from_str(&text).map_err(|e| AegisError::InvalidArgument(e.to_string()))?;
         if store.pdf_hash != expected_hash {
             return Err(AegisError::InvalidArgument(
@@ -55,6 +60,9 @@ impl AnnotationStore {
         Ok(store)
     }
 
+    /// # Errors
+    ///
+    /// Returns [`AegisError`] if the annotation store cannot be serialized or written to disk.
     pub fn save(&self, pdf_path: &Path) -> AegisResult<()> {
         let path = Self::sidecar_path(pdf_path);
         let text = serde_json::to_string_pretty(self)

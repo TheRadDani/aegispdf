@@ -21,6 +21,9 @@ pub struct PageInfo {
 }
 
 impl PdfWorkspace {
+    /// # Errors
+    ///
+    /// Returns an error if the file cannot be read or parsed as a PDF.
     pub fn open(path: &Path) -> anyhow::Result<Self> {
         let bytes = std::fs::read(path)?;
         let mut hasher = Sha256::new();
@@ -36,10 +39,12 @@ impl PdfWorkspace {
         })
     }
 
+    #[must_use]
     pub fn page_count(&self) -> usize {
         self.ordered_page_numbers.len()
     }
 
+    #[must_use]
     pub fn page_infos(&self) -> Vec<PageInfo> {
         self.ordered_page_numbers
             .iter()
@@ -51,24 +56,34 @@ impl PdfWorkspace {
             .collect()
     }
 
+    #[must_use]
     pub fn object_id_for_index(&self, index: usize) -> Option<ObjectId> {
         let page_number = self.ordered_page_numbers.get(index)?;
         let pages = self.document.get_pages();
         pages.get(page_number).copied()
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if the page reordering fails.
     pub fn reorder_pages_by_number(&mut self, new_order: &[u32]) -> anyhow::Result<()> {
         reorder_pages_by_page_number(&mut self.document, new_order)?;
         self.ordered_page_numbers = new_order.to_vec();
         Ok(())
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if the page deletion fails.
     pub fn delete_pages_by_indices(&mut self, indices: &[usize]) -> anyhow::Result<()> {
         delete_pages_by_indices(&mut self.document, indices, &self.ordered_page_numbers)?;
         self.ordered_page_numbers = self.document.get_pages().keys().copied().collect();
         Ok(())
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if the document cannot be saved to disk.
     pub fn save_to(&mut self, output_path: &Path) -> anyhow::Result<()> {
         self.document.prune_objects();
         self.document.compress();

@@ -16,6 +16,10 @@ pub struct PageAnalysis {
 }
 
 /// `threshold` — mean absolute deviation from white (0–255 scale) below this ⇒ blank.
+///
+/// # Errors
+///
+/// Returns [`AegisError`] if any page cannot be rendered.
 pub fn analyze_pages(document: &Document, threshold: f32) -> AegisResult<Vec<PageAnalysis>> {
     let page_count = document.get_pages().len();
     let mut results = Vec::with_capacity(page_count);

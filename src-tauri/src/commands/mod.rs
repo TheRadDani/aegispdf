@@ -1,3 +1,5 @@
+#![allow(clippy::needless_pass_by_value, clippy::significant_drop_tightly)]
+
 use std::path::PathBuf;
 
 use lopdf::Document;
@@ -28,6 +30,8 @@ fn workspaces<'a>(
     state.documents.lock().map_err(|_| AegisError::LockPoisoned)
 }
 
+/// # Errors
+/// Returns `AegisErrorResponse` if the file cannot be opened or the workspace lock is poisoned.
 #[tauri::command]
 pub fn open_pdf(
     path: String,
@@ -54,6 +58,8 @@ pub fn open_pdf(
     })
 }
 
+/// # Errors
+/// Returns `AegisErrorResponse` if the document is not found, the lock is poisoned, or rendering fails.
 #[tauri::command]
 pub fn get_page_thumbnail(
     document_id: String,
@@ -73,6 +79,8 @@ pub fn get_page_thumbnail(
     .map_err(|e| AegisErrorResponse::from(AegisError::Render(e.to_string())))
 }
 
+/// # Errors
+/// Returns `AegisErrorResponse` if the document is not found, the lock is poisoned, or the page order is invalid.
 #[tauri::command]
 pub fn reorder_pages(
     document_id: String,
@@ -89,6 +97,8 @@ pub fn reorder_pages(
     Ok(())
 }
 
+/// # Errors
+/// Returns `AegisErrorResponse` if the document is not found, the lock is poisoned, or a page index is out of range.
 #[tauri::command]
 pub fn delete_pages(
     document_id: String,
@@ -105,6 +115,8 @@ pub fn delete_pages(
     Ok(workspace.page_infos())
 }
 
+/// # Errors
+/// Returns `AegisErrorResponse` if the document is not found or the lock is poisoned.
 #[tauri::command]
 pub fn get_page_list(
     document_id: String,
@@ -115,6 +127,8 @@ pub fn get_page_list(
     Ok(workspace.page_infos())
 }
 
+/// # Errors
+/// Returns `AegisErrorResponse` if the document is not found, the lock is poisoned, or saving fails.
 #[tauri::command]
 pub fn save_pdf(
     document_id: String,
@@ -131,12 +145,16 @@ pub fn save_pdf(
     Ok(())
 }
 
+/// # Errors
+/// Returns `AegisErrorResponse` if any input path cannot be read or the output cannot be written.
 #[tauri::command]
 pub fn merge_pdfs_paths(inputs: Vec<String>, output: String) -> Result<(), AegisErrorResponse> {
     let paths: Vec<PathBuf> = inputs.iter().map(PathBuf::from).collect();
     merge::merge_pdfs(&paths, &PathBuf::from(output)).map_err(AegisErrorResponse::from)
 }
 
+/// # Errors
+/// Returns `AegisErrorResponse` if ranges and outputs lengths differ, any range is invalid, or saving fails.
 #[tauri::command]
 pub fn split_pdf_paths(
     source: String,
@@ -154,6 +172,9 @@ pub fn split_pdf_paths(
 }
 
 /// One PDF per page in `output_dir` (`page_NNN.pdf`).
+///
+/// # Errors
+/// Returns `AegisErrorResponse` if the source cannot be loaded or any page output cannot be saved.
 #[tauri::command]
 pub fn split_pdf_each_page(
     source: String,
@@ -175,6 +196,8 @@ pub fn split_pdf_each_page(
     Ok(outs)
 }
 
+/// # Errors
+/// Returns `AegisErrorResponse` if the document is not found or the lock is poisoned.
 #[tauri::command]
 pub fn compress_workspace(
     document_id: String,
@@ -189,6 +212,8 @@ pub fn compress_workspace(
     Ok(())
 }
 
+/// # Errors
+/// Returns `AegisErrorResponse` if the document is not found or the lock is poisoned.
 #[tauri::command]
 pub fn auto_clean_workspace(
     document_id: String,
@@ -203,6 +228,8 @@ pub fn auto_clean_workspace(
     Ok(())
 }
 
+/// # Errors
+/// Returns `AegisErrorResponse` if the sidecar file cannot be read or the hash does not match.
 #[tauri::command]
 pub fn load_aegis(
     pdf_path: String,
@@ -212,6 +239,8 @@ pub fn load_aegis(
         .map_err(AegisErrorResponse::from)
 }
 
+/// # Errors
+/// Returns `AegisErrorResponse` if the sidecar file cannot be written.
 #[tauri::command]
 pub fn save_aegis(pdf_path: String, store: AnnotationStore) -> Result<(), AegisErrorResponse> {
     store
@@ -219,6 +248,8 @@ pub fn save_aegis(pdf_path: String, store: AnnotationStore) -> Result<(), AegisE
         .map_err(AegisErrorResponse::from)
 }
 
+/// # Errors
+/// Returns `AegisErrorResponse` if the job queue is unavailable.
 #[tauri::command]
 pub fn submit_job(kind: JobKind, queue: State<'_, JobQueue>) -> Result<String, AegisErrorResponse> {
     queue
@@ -227,6 +258,9 @@ pub fn submit_job(kind: JobKind, queue: State<'_, JobQueue>) -> Result<String, A
 }
 
 /// Write current workspace PDF to a temp file for OCR / analyze jobs (releases lock before heavy work).
+///
+/// # Errors
+/// Returns `AegisErrorResponse` if the document is not found, the lock is poisoned, or the temp file cannot be written.
 #[tauri::command]
 pub fn export_pdf_temp(
     document_id: String,

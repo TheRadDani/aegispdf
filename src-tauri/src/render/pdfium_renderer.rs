@@ -15,6 +15,11 @@ fn doc_to_bytes(document: &Document) -> anyhow::Result<Vec<u8>> {
 }
 
 /// Raw PNG bytes for OCR pipelines.
+///
+/// # Errors
+///
+/// Returns an error if PDFium cannot be loaded, the PDF parsed, the page rendered,
+/// or the PNG encoded.
 pub fn render_page_png(
     document: &Document,
     page_index: usize,
@@ -24,7 +29,7 @@ pub fn render_page_png(
     let pdfium = Pdfium::new(bindings);
     let bytes = doc_to_bytes(document)?;
     let loaded = pdfium.load_pdf_from_byte_vec(bytes, None)?;
-    let page = loaded.pages().get(page_index as u16)?;
+    let page = loaded.pages().get(u16::try_from(page_index)?)?;
     let bitmap = page.render_with_config(
         &PdfRenderConfig::new()
             .set_target_width(target_width)
@@ -32,17 +37,19 @@ pub fn render_page_png(
             .rotate_if_landscape(PdfPageRenderRotation::None, false),
     )?;
     let raw = bitmap.as_rgba_bytes();
-    let buffer = ImageBuffer::<Rgba<u8>, _>::from_raw(
-        bitmap.width() as u32,
-        bitmap.height() as u32,
-        raw.to_vec(),
-    )
+    let bmp_w = u32::try_from(bitmap.width()).map_err(|e| anyhow::anyhow!("bitmap width: {e}"))?;
+    let bmp_h = u32::try_from(bitmap.height()).map_err(|e| anyhow::anyhow!("bitmap height: {e}"))?;
+    let buffer = ImageBuffer::<Rgba<u8>, _>::from_raw(bmp_w, bmp_h, raw)
     .ok_or_else(|| anyhow::anyhow!("invalid bitmap buffer"))?;
     let mut out = Cursor::new(Vec::<u8>::new());
     DynamicImage::ImageRgba8(buffer).write_to(&mut out, ImageFormat::Png)?;
     Ok(out.into_inner())
 }
 
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+/// # Errors
+///
+/// Returns an error if the page cannot be rendered or base64-encoded.
 pub fn render_page_thumbnail_base64(
     document: &Document,
     page_index: usize,
@@ -58,6 +65,10 @@ pub fn render_page_thumbnail_base64(
 }
 
 /// Downscale render for fingerprinting; returns `(sha256_hex, mean_abs_deviation_from_white)`.
+///
+/// # Errors
+///
+/// Returns an error if PDFium cannot be loaded, the PDF parsed, or the page rendered.
 pub fn page_render_fingerprint(
     document: &Document,
     page_index: usize,
@@ -67,7 +78,7 @@ pub fn page_render_fingerprint(
     let pdfium = Pdfium::new(bindings);
     let bytes = doc_to_bytes(document)?;
     let loaded = pdfium.load_pdf_from_byte_vec(bytes, None)?;
-    let page = loaded.pages().get(page_index as u16)?;
+    let page = loaded.pages().get(u16::try_from(page_index)?)?;
     let bitmap = page.render_with_config(
         &PdfRenderConfig::new()
             .set_target_width(target_width)
@@ -80,20 +91,21 @@ pub fn page_render_fingerprint(
     let hex = format!("{:x}", hasher.finalize());
 
     let mut mad_sum = 0_f64;
-    let mut n = 0_u64;
+    let mut mad_count = 0_u32;
     for chunk in raw.chunks(4) {
         if let [r, g, b, _] = chunk {
             let r = f64::from(*r);
             let g = f64::from(*g);
             let b = f64::from(*b);
             mad_sum += (255.0 - r).abs() + (255.0 - g).abs() + (255.0 - b).abs();
-            n = n.saturating_add(3);
+            mad_count = mad_count.saturating_add(3);
         }
     }
-    let mad = if n == 0 {
+    #[allow(clippy::cast_possible_truncation)]
+    let mad = if mad_count == 0 {
         0.0
     } else {
-        (mad_sum / n as f64) as f32
+        (mad_sum / f64::from(mad_count)) as f32
     };
     Ok((hex, mad))
 }

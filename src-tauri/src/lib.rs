@@ -26,7 +26,7 @@ impl Default for Workspaces {
 }
 
 /// Extract the first file-path argument that looks like a PDF or .aegis file.
-/// Used when the OS launches AegisPDF via a file association (e.g. double-click
+/// Used when the OS launches `AegisPDF` via a file association (e.g. double-click
 /// a .pdf on Windows, or `xdg-open file.pdf` on Linux).
 fn extract_file_arg() -> Option<String> {
     std::env::args().skip(1).find(|arg| {
@@ -43,6 +43,7 @@ fn extract_file_arg() -> Option<String> {
     })
 }
 
+#[allow(clippy::large_stack_frames)]
 pub fn run() {
     let initial_file = extract_file_arg();
 
@@ -54,7 +55,7 @@ pub fn run() {
             app.manage(Workspaces::default());
             app.manage(jobs::JobQueue::spawn(handle.clone()));
 
-            if let Some(path) = initial_file.clone() {
+            if let Some(path) = initial_file {
                 std::thread::spawn(move || {
                     std::thread::sleep(std::time::Duration::from_millis(900));
                     let _ = handle.emit("aegis://open-file", &path);

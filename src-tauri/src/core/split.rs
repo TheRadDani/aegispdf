@@ -7,6 +7,11 @@ use lopdf::Document;
 use crate::error::{AegisError, AegisResult};
 
 /// Each range is `(start_page, end_page)` inclusive, using PDF page labels from [`Document::get_pages`].
+///
+/// # Errors
+///
+/// Returns [`AegisError`] if the ranges and outputs lengths differ, any range is invalid,
+/// the source PDF cannot be loaded, or an output file cannot be saved.
 pub fn split_pdf_by_ranges(
     source: &Path,
     ranges: &[(u32, u32)],

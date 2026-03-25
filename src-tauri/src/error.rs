@@ -84,6 +84,7 @@ impl From<AegisError> for AegisErrorResponse {
 
 pub type AegisResult<T> = Result<T, AegisError>;
 
+#[must_use]
 pub fn to_invoke_err(e: AegisError) -> String {
     serde_json::to_string(&AegisErrorResponse::from(e))
         .unwrap_or_else(|_| r#"{"code":"serialize","message":"error"}"#.to_string())

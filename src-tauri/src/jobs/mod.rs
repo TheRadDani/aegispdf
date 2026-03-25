@@ -61,14 +61,14 @@ struct QueuedJob {
 
 pub struct JobQueue {
     tx: mpsc::Sender<QueuedJob>,
-    _worker: thread::JoinHandle<()>,
+    #[allow(dead_code)]
+    worker: thread::JoinHandle<()>,
 }
 
 impl JobQueue {
     pub fn spawn(app: AppHandle) -> Self {
         let (tx, rx) = mpsc::channel::<QueuedJob>();
-        let app = app.clone();
-        let _worker = thread::spawn(move || {
+        let worker = thread::spawn(move || {
             while let Ok(job) = rx.recv() {
                 let emit = |evt: JobEvent| {
                     let _ = app.emit("aegis-job-event", &evt);
@@ -99,7 +99,7 @@ impl JobQueue {
                 }
             }
         });
-        Self { tx, _worker }
+        Self { tx, worker }
     }
 
     pub fn submit(&self, kind: JobKind) -> Result<String, String> {
@@ -165,7 +165,8 @@ fn run_job(
                 std::fs::remove_file(&out_path).map_err(AegisError::from)?;
             }
             for idx in 0..doc.get_pages().len() {
-                let progress = 0.1 + 0.85 * (idx as f32) / (n as f32);
+                #[allow(clippy::cast_precision_loss)]
+                let progress = 0.1_f32 + 0.85_f32 * (idx as f32) / (n as f32);
                 emit(JobEvent {
                     job_id: job_id.to_string(),
                     phase: "running".into(),

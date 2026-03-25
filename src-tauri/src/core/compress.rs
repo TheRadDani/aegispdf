@@ -18,6 +18,9 @@ pub fn recompress_streams_roundtrip(document: &mut Document) {
     document.compress();
 }
 
+/// # Errors
+///
+/// Returns an error if the zlib encoder fails to write or finish.
 /// Standalone zlib compression (flate2) for pipelines and tests.
 pub fn zlib_compress_best(data: &[u8]) -> std::io::Result<Vec<u8>> {
     let mut enc = ZlibEncoder::new(Vec::new(), Compression::best());
