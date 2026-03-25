@@ -50,14 +50,43 @@ jobs:
               run.conclusion === 'success'
             );
 
-            if (!ciRun) {
-              core.setFailed(
-                "No completed successful CI run from ci.yml was found for this commit SHA. " +
-                "Run the CI workflow successfully on this commit before releasing."
-              );
-            } else {
-              console.log(`CI passed: ${ciRun.html_url}`);
+            if (ciRun) {
+              console.log(`CI passed on exact commit: ${ciRun.html_url}`);
+              return;
             }
+
+            const successfulRuns = runs.filter(run =>
+              run.name === 'CI' &&
+              run.status === 'completed' &&
+              run.conclusion === 'success'
+            );
+
+            for (const priorRun of successfulRuns) {
+              const compare = await github.rest.repos.compareCommitsWithBasehead({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                basehead: `${priorRun.head_sha}...${context.sha}`,
+              });
+
+              const changedFiles = compare.data.files.map(file => file.filename);
+              const releaseWorkflowOnly =
+                compare.data.status === 'ahead' &&
+                changedFiles.length > 0 &&
+                changedFiles.every(file => file === '.github/workflows/release.yml');
+
+              if (releaseWorkflowOnly) {
+                console.log(
+                  `Reusing prior successful CI run ${priorRun.html_url} because only .github/workflows/release.yml changed since ${priorRun.head_sha}.`
+                );
+                return;
+              }
+            }
+
+            core.setFailed(
+              "No completed successful CI run from ci.yml was found for this commit SHA, " +
+              "and no prior successful CI run could be reused safely. " +
+              "Run the CI workflow successfully on this commit before releasing."
+            );
 
   # ─────────────────────────────────────────────────────────────────────────
   # Generate Tauri icons once on Linux and reuse across bundle jobs
