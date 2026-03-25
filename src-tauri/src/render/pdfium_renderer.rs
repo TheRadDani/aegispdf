@@ -7,7 +7,7 @@ use lopdf::Document;
 use pdfium_render::prelude::*;
 use sha2::{Digest, Sha256};
 
-/// Serialize the document to bytes so PDFium can load it.
+/// Serialize the document to bytes so `PDFium` can load it.
 fn doc_to_bytes(document: &Document) -> anyhow::Result<Vec<u8>> {
     let mut bytes = Vec::new();
     document.clone().save_to(&mut bytes)?;
