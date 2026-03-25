@@ -1,9 +1,10 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       tag:
@@ -11,8 +12,8 @@ on:
         required: false
         default: "v0.0.0-dev"
 
-# Release workflow requires the full CI pipeline to have passed first.
-# The 'ci-passed' job enforces this via workflow_run dependency.
+# Release runs after CI completes successfully for a tagged commit, or manually
+# for an explicit tag via workflow_dispatch.
 permissions:
   contents: write
   actions: read
@@ -22,82 +23,85 @@ env:
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────
-  # Gate: verify the most recent CI run on this ref passed all security checks
+  # Resolve which tag, if any, should be released for this workflow run.
   # ─────────────────────────────────────────────────────────────────────────
-  ci-passed:
-    name: "🔒 Verify CI security + quality gate"
+  release-context:
+    name: Resolve release context
     runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.resolve.outputs.should_release }}
+      release_tag: ${{ steps.resolve.outputs.release_tag }}
+      target_ref: ${{ steps.resolve.outputs.target_ref }}
     steps:
-      - name: Check CI status for this ref
+      - name: Resolve tag for this run
+        id: resolve
         uses: actions/github-script@v7
+        env:
+          MANUAL_TAG: ${{ inputs.tag }}
         with:
           script: |
-            const runs = await github.paginate(
-              github.rest.actions.listWorkflowRuns,
-              {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                workflow_id: 'ci.yml',
-                head_sha: context.sha,
-                per_page: 100,
+            if (context.eventName === 'workflow_dispatch') {
+              const manualTag = process.env.MANUAL_TAG;
+              if (!manualTag) {
+                core.setFailed('workflow_dispatch requires an explicit tag input.');
+                return;
               }
-            );
 
-            const ciRun = runs.find(run =>
-              run.name === 'CI' &&
-              run.head_sha === context.sha &&
-              run.status === 'completed' &&
-              run.conclusion === 'success'
-            );
-
-            if (ciRun) {
-              console.log(`CI passed on exact commit: ${ciRun.html_url}`);
+              core.setOutput('should_release', 'true');
+              core.setOutput('release_tag', manualTag);
+              core.setOutput('target_ref', manualTag);
+              console.log(`Manual release requested for tag ${manualTag}`);
               return;
             }
 
-            const successfulRuns = runs.filter(run =>
-              run.name === 'CI' &&
-              run.status === 'completed' &&
-              run.conclusion === 'success'
-            );
+            const workflowRun = context.payload.workflow_run;
 
-            for (const priorRun of successfulRuns) {
-              const compare = await github.rest.repos.compareCommitsWithBasehead({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                basehead: `${priorRun.head_sha}...${context.sha}`,
-              });
-
-              const changedFiles = compare.data.files.map(file => file.filename);
-              const releaseWorkflowOnly =
-                compare.data.status === 'ahead' &&
-                changedFiles.length > 0 &&
-                changedFiles.every(file => file === '.github/workflows/release.yml');
-
-              if (releaseWorkflowOnly) {
-                console.log(
-                  `Reusing prior successful CI run ${priorRun.html_url} because only .github/workflows/release.yml changed since ${priorRun.head_sha}.`
-                );
-                return;
-              }
+            if (!workflowRun || workflowRun.conclusion !== 'success') {
+              core.setOutput('should_release', 'false');
+              console.log('Skipping release: CI workflow did not complete successfully.');
+              return;
             }
 
-            core.setFailed(
-              "No completed successful CI run from ci.yml was found for this commit SHA, " +
-              "and no prior successful CI run could be reused safely. " +
-              "Run the CI workflow successfully on this commit before releasing."
+            if (workflowRun.event !== 'push') {
+              core.setOutput('should_release', 'false');
+              console.log(`Skipping release: CI completed for unsupported event ${workflowRun.event}.`);
+              return;
+            }
+
+            const tags = await github.paginate(github.rest.repos.listTags, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+
+            const matchingTag = tags.find(tag =>
+              tag.name.startsWith('v') && tag.commit && tag.commit.sha === workflowRun.head_sha
             );
+
+            if (!matchingTag) {
+              core.setOutput('should_release', 'false');
+              console.log(`Skipping release: no v* tag points at ${workflowRun.head_sha}.`);
+              return;
+            }
+
+            core.setOutput('should_release', 'true');
+            core.setOutput('release_tag', matchingTag.name);
+            core.setOutput('target_ref', matchingTag.name);
+            console.log(`Release enabled for tag ${matchingTag.name} from CI run ${workflowRun.html_url}`);
 
   # ─────────────────────────────────────────────────────────────────────────
   # Generate Tauri icons once on Linux and reuse across bundle jobs
   # ─────────────────────────────────────────────────────────────────────────
   prepare-icons:
-    needs: ci-passed
+    needs: release-context
     name: Prepare icons
     runs-on: ubuntu-22.04
+    if: needs.release-context.outputs.should_release == 'true'
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-context.outputs.target_ref }}
 
       - name: Install icon toolchain
         run: |
@@ -125,12 +129,15 @@ jobs:
   # Linux (.deb, .rpm, .AppImage)
   # ─────────────────────────────────────────────────────────────────────────
   build-linux:
-    needs: [ci-passed, prepare-icons]
+    needs: [release-context, prepare-icons]
     name: Linux bundles
     runs-on: ubuntu-22.04
+    if: needs.release-context.outputs.should_release == 'true'
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-context.outputs.target_ref }}
 
       - name: Install system prerequisites
         run: |
@@ -219,11 +226,14 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────
   build-windows:
     name: Windows bundles
-    needs: [ci-passed, prepare-icons]
+    needs: [release-context, prepare-icons]
     runs-on: windows-latest
+    if: needs.release-context.outputs.should_release == 'true'
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-context.outputs.target_ref }}
 
       - name: Install PDFium
         shell: pwsh
@@ -284,24 +294,25 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────
   create-release:
     name: Create GitHub Release
-    needs: [ci-passed]
+    needs: [release-context]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: needs.release-context.outputs.should_release == 'true'
 
     steps:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "AegisPDF ${{ github.ref_name }}"
+          tag_name: ${{ needs.release-context.outputs.release_tag }}
+          name: "AegisPDF ${{ needs.release-context.outputs.release_tag }}"
           draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(needs.release-context.outputs.release_tag, '-') }}
           generate_release_notes: true
 
   upload-linux-release-assets:
     name: Upload Linux release assets
-    needs: [create-release, build-linux]
+    needs: [release-context, create-release, build-linux]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: needs.release-context.outputs.should_release == 'true'
 
     steps:
       - name: Download Linux artifacts
@@ -319,6 +330,7 @@ jobs:
       - name: Upload Linux artifacts to release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.release-context.outputs.release_tag }}
           append_body: true
           files: |
             release-artifacts/linux/**/*
@@ -326,9 +338,9 @@ jobs:
 
   upload-windows-release-assets:
     name: Upload Windows release assets
-    needs: [create-release, build-windows]
+    needs: [release-context, create-release, build-windows]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: needs.release-context.outputs.should_release == 'true'
 
     steps:
       - name: Download Windows artifacts
@@ -346,6 +358,7 @@ jobs:
       - name: Upload Windows artifacts to release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.release-context.outputs.release_tag }}
           append_body: true
           files: |
             release-artifacts/windows/**/*
@@ -371,9 +384,9 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────
   publish-apt-repo:
     name: Publish APT repository (GitHub Pages)
-    needs: [build-linux]
+    needs: [release-context, build-linux]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: needs.release-context.outputs.should_release == 'true'
     permissions:
       contents: write
 
@@ -460,7 +473,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --quiet \
-            || git commit -m "apt: publish ${{ github.ref_name }}"
+            || git commit -m "apt: publish ${{ needs.release-context.outputs.release_tag }}"
           git push origin gh-pages
 
   # ─────────────────────────────────────────────────────────────────────────
@@ -475,10 +488,10 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────
   publish-winget:
     name: Submit to WinGet
-    needs: [build-windows]
+    needs: [release-context, build-windows]
     runs-on: windows-latest
     # Skip pre-releases (tags containing a hyphen, e.g. v1.0.0-beta.1)
-    if: startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, '-')
+    if: needs.release-context.outputs.should_release == 'true' && !contains(needs.release-context.outputs.release_tag, '-')
 
     steps:
       - name: Check WinGet package registration
@@ -513,7 +526,7 @@ jobs:
           #   manifests/a/AegisPDF/AegisPDF/<version>/ manually once, then this
           #   action will handle all future updates automatically.
           identifier: AegisPDF.AegisPDF
-          release-tag: ${{ github.ref_name }}
+          release-tag: ${{ needs.release-context.outputs.release_tag }}
           # Only include the NSIS setup installer, not the MSI
           installers-regex: '.*-setup\.exe$'
           token: ${{ secrets.WINGET_TOKEN }}
