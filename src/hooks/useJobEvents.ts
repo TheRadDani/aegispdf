@@ -13,7 +13,7 @@ export function useJobEvents() {
       unlisten = fn;
     });
     return () => {
-      void unlisten?.();
+      unlisten?.();
     };
   }, []);
 

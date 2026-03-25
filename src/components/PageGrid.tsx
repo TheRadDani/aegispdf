@@ -25,7 +25,7 @@ export default function PageGrid({
 }: PageGridProps) {
   const onDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over || active.id === over.id) {return;}
     const oldIndex = pages.findIndex((p) => p.index === active.id);
     const newIndex = pages.findIndex((p) => p.index === over.id);
     const moved = arrayMove(pages, oldIndex, newIndex).map((p, idx) => ({ ...p, index: idx }));
@@ -33,7 +33,7 @@ export default function PageGrid({
   };
 
   return (
-    <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+    <DndContext collisionDetection={closestCenter} onDragEnd={(event) => { void onDragEnd(event); }}>
       <SortableContext items={pages.map((p) => p.index)} strategy={rectSortingStrategy}>
         <section className="page-grid">
           {pages.map((page) => (

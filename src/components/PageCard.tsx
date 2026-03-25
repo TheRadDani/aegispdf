@@ -34,7 +34,7 @@ function HighlightOverlay({ payload }: { payload: Record<string, unknown> }) {
 }
 
 export default function PageCard({ documentId, page, zoom, isSelected, annotations, onSelect }: PageCardProps) {
-  const [thumb, setThumb] = useState<string>("");
+  const [thumb, setThumb] = useState("");
   const [loading, setLoading] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: page.index
@@ -48,12 +48,12 @@ export default function PageCard({ documentId, page, zoom, isSelected, annotatio
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    getPageThumbnail(documentId, page.index, zoom)
+    void getPageThumbnail(documentId, page.index, zoom)
       .then((data) => {
-        if (mounted) setThumb(data);
+        if (mounted) {setThumb(data);}
       })
       .finally(() => {
-        if (mounted) setLoading(false);
+        if (mounted) {setLoading(false);}
       });
     return () => {
       mounted = false;

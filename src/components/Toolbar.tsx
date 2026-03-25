@@ -1,13 +1,13 @@
 interface ToolbarProps {
-  onOpen: () => void;
-  onSave: () => void;
-  onDelete: () => void;
-  onMerge: () => void;
-  onSplit: () => void;
-  onCompress: () => void;
-  onClean: () => void;
-  onOcr: () => void;
-  onAnalyze: () => void;
+  onOpen: () => Promise<void>;
+  onSave: () => Promise<void>;
+  onDelete: () => Promise<void>;
+  onMerge: () => Promise<void>;
+  onSplit: () => Promise<void>;
+  onCompress: () => Promise<void>;
+  onClean: () => Promise<void>;
+  onOcr: () => Promise<void>;
+  onAnalyze: () => Promise<void>;
   onAnnotate: () => void;
   hasDocument: boolean;
   jobHint?: string;
@@ -31,30 +31,30 @@ export default function Toolbar({
     <header className="toolbar">
       <div className="toolbar-brand">
         <h1>AegisPDF</h1>
-        {jobHint ? <span className="job-hint">{jobHint}</span> : null}
+        {jobHint !== undefined && jobHint.length > 0 ? <span className="job-hint">{jobHint}</span> : null}
       </div>
       <div className="toolbar-actions">
-        <button onClick={onOpen}>Open</button>
-        <button onClick={onSave} disabled={!hasDocument}>
+        <button onClick={() => { void onOpen(); }}>Open</button>
+        <button onClick={() => { void onSave(); }} disabled={!hasDocument}>
           Save
         </button>
-        <button onClick={onMerge}>Merge</button>
-        <button onClick={onSplit} disabled={!hasDocument}>
+        <button onClick={() => { void onMerge(); }}>Merge</button>
+        <button onClick={() => { void onSplit(); }} disabled={!hasDocument}>
           Split
         </button>
-        <button onClick={onDelete} disabled={!hasDocument}>
+        <button onClick={() => { void onDelete(); }} disabled={!hasDocument}>
           Delete
         </button>
-        <button onClick={onCompress} disabled={!hasDocument}>
+        <button onClick={() => { void onCompress(); }} disabled={!hasDocument}>
           Compress
         </button>
-        <button onClick={onClean} disabled={!hasDocument}>
+        <button onClick={() => { void onClean(); }} disabled={!hasDocument}>
           Clean
         </button>
-        <button onClick={onOcr} disabled={!hasDocument}>
+        <button onClick={() => { void onOcr(); }} disabled={!hasDocument}>
           OCR
         </button>
-        <button onClick={onAnalyze} disabled={!hasDocument}>
+        <button onClick={() => { void onAnalyze(); }} disabled={!hasDocument}>
           Analyze
         </button>
         <button onClick={onAnnotate} disabled={!hasDocument}>

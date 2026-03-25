@@ -14,7 +14,7 @@ import type { Annotation, AnnotationStore, OpenPdfResponse, PageInfo } from "../
 export function usePdfWorkspace() {
   const [doc, setDoc] = useState<OpenPdfResponse | null>(null);
   const [pages, setPages] = useState<PageInfo[]>([]);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selected, setSelected] = useState(new Set<number>());
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
 
   const openPdf = useCallback(async (path: string) => {
@@ -27,7 +27,7 @@ export function usePdfWorkspace() {
   }, []);
 
   const saveAnnotations = useCallback(async () => {
-    if (!doc) return;
+    if (!doc) {return;}
     const store: AnnotationStore = { pdf_hash: doc.file_hash, annotations };
     await saveAegisApi(doc.source_path, store);
   }, [doc, annotations]);
@@ -38,7 +38,7 @@ export function usePdfWorkspace() {
 
   const reorder = useCallback(
     async (newPages: PageInfo[]) => {
-      if (!doc) return;
+      if (!doc) {return;}
       setPages(newPages);
       const newOrder = newPages.map((p) => p.page_number);
       await reorderPagesApi(doc.document_id, newOrder);
@@ -47,7 +47,7 @@ export function usePdfWorkspace() {
   );
 
   const deleteSelected = useCallback(async () => {
-    if (!doc || selected.size === 0) return;
+    if (!doc || selected.size === 0) {return;}
     const indices = Array.from(selected.values()).sort((a, b) => b - a);
     const nextPages = await deletePagesApi(doc.document_id, indices);
     setPages(nextPages);
@@ -65,7 +65,7 @@ export function usePdfWorkspace() {
 
   const save = useCallback(
     async (outputPath: string) => {
-      if (!doc) return;
+      if (!doc) {return;}
       await savePdfApi(doc.document_id, outputPath);
     },
     [doc]
@@ -73,7 +73,7 @@ export function usePdfWorkspace() {
 
   const compress = useCallback(
     async (roundtrip: boolean) => {
-      if (!doc) return;
+      if (!doc) {return;}
       await compressWorkspaceApi(doc.document_id, roundtrip);
     },
     [doc]
@@ -81,7 +81,7 @@ export function usePdfWorkspace() {
 
   const autoClean = useCallback(
     async (stripAnnots: boolean) => {
-      if (!doc) return;
+      if (!doc) {return;}
       await autoCleanWorkspaceApi(doc.document_id, stripAnnots);
     },
     [doc]

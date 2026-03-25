@@ -6,7 +6,7 @@ interface RightPanelProps {
   analysis: PageAnalysis[] | null;
   onAddHighlight: () => void;
   onAddTextNote: () => void;
-  onSaveAegis: () => void;
+  onSaveAegis: () => Promise<void>;
 }
 
 export default function RightPanel({
@@ -18,7 +18,7 @@ export default function RightPanel({
   onSaveAegis
 }: RightPanelProps) {
   const blanks = analysis?.filter((a) => a.is_blank) ?? [];
-  const dups = analysis?.filter((a) => a.duplicate_of != null) ?? [];
+  const dups = analysis?.filter((a) => a.duplicate_of !== null) ?? [];
 
   return (
     <aside className="right-panel">
@@ -41,7 +41,7 @@ export default function RightPanel({
           <ul className="analysis-list">
             {dups.slice(0, 8).map((d) => (
               <li key={d.page_index}>
-                Page {d.page_index + 1} → same as {((d.duplicate_of ?? 0) as number) + 1}
+                Page {d.page_index + 1} → same as {((d.duplicate_of ?? 0)) + 1}
               </li>
             ))}
           </ul>
@@ -56,7 +56,7 @@ export default function RightPanel({
       <button type="button" onClick={onAddTextNote}>
         Text note
       </button>
-      <button type="button" onClick={onSaveAegis}>
+      <button type="button" onClick={() => { void onSaveAegis(); }}>
         Save .aegis
       </button>
     </aside>

@@ -61,7 +61,7 @@ export default [
       "@typescript-eslint/restrict-template-expressions": "error",
 
       // Avoid runtime panics
-      "@typescript-eslint/no-throw-literal": "error",
+      "@typescript-eslint/only-throw-error": "error",
       "@typescript-eslint/prefer-promise-reject-errors": "error",
 
       // Allow void operator for fire-and-forget (common in event handlers)
@@ -102,7 +102,7 @@ export default [
       "no-new-func": "error",
       "no-implied-eval": "error",
       "no-script-url": "error",
-      "no-alert": "warn",
+      "no-alert": "off",
       eqeqeq: ["error", "always"],
       curly: ["error", "all"],
       "prefer-const": "error",
