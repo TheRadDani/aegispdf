@@ -190,18 +190,18 @@ jobs:
           if (-not (Test-Path $svg)) { throw "Brand SVG not found: $svg" }
           New-Item -ItemType Directory -Path $out -Force | Out-Null
 
-          $inkscape = "C:\Program Files\Inkscape\bin\inkscape.exe"
+          # cairosvg gives reliable SVG→PNG on Windows CI.
+          # ImageMagick on windows-latest has no SVG delegate (librsvg/Inkscape),
+          # so it cannot open SVGs — we reserve magick only for PNG→ICO below.
+          pip install cairosvg --quiet 2>&1 | Out-Null
+
+          $svgAbs = (Resolve-Path $svg).Path
+          $svgUri = 'file:///' + $svgAbs.Replace('\', '/')
 
           function Render([int]$size, [string]$dest) {
-              if (Test-Path $inkscape) {
-                  & $inkscape --export-type=png `
-                              --export-width=$size --export-height=$size `
-                              --export-filename=$dest $svg 2>$null
-              } else {
-                  # IMv7: input file must precede post-processing ops like -resize
-                  & magick -background none -density 300 `
-                           $svg -resize "${size}x${size}" $dest
-              }
+              $dstAbs = [System.IO.Path]::GetFullPath($dest)
+              $py = "import cairosvg; cairosvg.svg2png(url='$svgUri', write_to=r'$dstAbs', output_width=$size, output_height=$size)"
+              python -c $py
               if (-not (Test-Path $dest)) {
                   throw "Failed to render ${size}x${size} PNG to $dest"
               }
@@ -212,14 +212,11 @@ jobs:
           Render 256 "$out\256x256.png"
           Copy-Item "$out\256x256.png" "$out\128x128@2x.png"
 
-          # ICO — IMv7 syntax (no 'convert' subcommand)
+          # ICO — magick handles PNG→ICO fine without any delegate libraries
           & magick "$out\32x32.png" "$out\128x128.png" "$out\256x256.png" "$out\icon.ico"
           if (-not (Test-Path "$out\icon.ico")) { throw "ICO generation failed" }
 
-          # ICNS placeholder (not used in Windows builds, but Tauri expects the file)
-          Copy-Item "$out\256x256.png" "$out\icon.icns" -ErrorAction SilentlyContinue
-
-          # ICNS placeholder (not needed on Windows builds)
+          # ICNS placeholder (not needed on Windows builds, but Tauri expects the file)
           Copy-Item "$out\256x256.png" "$out\icon.icns" -ErrorAction SilentlyContinue
 
       - name: Build Tauri bundles (msi + nsis)
