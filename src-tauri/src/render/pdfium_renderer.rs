@@ -14,6 +14,22 @@ fn doc_to_bytes(document: &Document) -> anyhow::Result<Vec<u8>> {
     Ok(bytes)
 }
 
+/// Load `PDFium` from a bundled resource path first, falling back to system library.
+fn load_pdfium(bundled_path: Option<&std::path::Path>) -> anyhow::Result<Pdfium> {
+    if let Some(path) = bundled_path {
+        if path.exists() {
+            let bindings = Pdfium::bind_to_library(
+                path.to_str()
+                    .ok_or_else(|| anyhow::anyhow!("invalid PDFium library path"))?,
+            )
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+            return Ok(Pdfium::new(bindings));
+        }
+    }
+    let bindings = Pdfium::bind_to_system_library().map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    Ok(Pdfium::new(bindings))
+}
+
 /// Raw PNG bytes for OCR pipelines.
 ///
 /// # Errors
@@ -24,9 +40,9 @@ pub fn render_page_png(
     document: &Document,
     page_index: usize,
     target_width: i32,
+    pdfium_path: Option<&std::path::Path>,
 ) -> anyhow::Result<Vec<u8>> {
-    let bindings = Pdfium::bind_to_system_library().map_err(|e| anyhow::anyhow!(e.to_string()))?;
-    let pdfium = Pdfium::new(bindings);
+    let pdfium = load_pdfium(pdfium_path)?;
     let bytes = doc_to_bytes(document)?;
     let loaded = pdfium.load_pdf_from_byte_vec(bytes, None)?;
     let page = loaded.pages().get(u16::try_from(page_index)?)?;
@@ -55,9 +71,10 @@ pub fn render_page_thumbnail_base64(
     document: &Document,
     page_index: usize,
     zoom: f32,
+    pdfium_path: Option<&std::path::Path>,
 ) -> anyhow::Result<String> {
     let target_width = (220.0 * zoom).clamp(100.0, 800.0) as i32;
-    let png = render_page_png(document, page_index, target_width)?;
+    let png = render_page_png(document, page_index, target_width, pdfium_path)?;
     let data_url = format!(
         "data:image/png;base64,{}",
         base64::engine::general_purpose::STANDARD.encode(&png)
@@ -74,9 +91,9 @@ pub fn page_render_fingerprint(
     document: &Document,
     page_index: usize,
     target_width: i32,
+    pdfium_path: Option<&std::path::Path>,
 ) -> anyhow::Result<(String, f32)> {
-    let bindings = Pdfium::bind_to_system_library().map_err(|e| anyhow::anyhow!(e.to_string()))?;
-    let pdfium = Pdfium::new(bindings);
+    let pdfium = load_pdfium(pdfium_path)?;
     let bytes = doc_to_bytes(document)?;
     let loaded = pdfium.load_pdf_from_byte_vec(bytes, None)?;
     let page = loaded.pages().get(u16::try_from(page_index)?)?;

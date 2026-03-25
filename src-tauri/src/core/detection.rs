@@ -20,13 +20,17 @@ pub struct PageAnalysis {
 /// # Errors
 ///
 /// Returns [`AegisError`] if any page cannot be rendered.
-pub fn analyze_pages(document: &Document, threshold: f32) -> AegisResult<Vec<PageAnalysis>> {
+pub fn analyze_pages(
+    document: &Document,
+    threshold: f32,
+    pdfium_path: Option<&std::path::Path>,
+) -> AegisResult<Vec<PageAnalysis>> {
     let page_count = document.get_pages().len();
     let mut results = Vec::with_capacity(page_count);
     let mut hash_to_first: HashMap<String, usize> = HashMap::new();
 
     for idx in 0..page_count {
-        let (hash, mad) = pdfium_renderer::page_render_fingerprint(document, idx, 64)
+        let (hash, mad) = pdfium_renderer::page_render_fingerprint(document, idx, 64, pdfium_path)
             .map_err(|e| AegisError::Render(e.to_string()))?;
         let is_blank = mad < threshold;
         let duplicate_of = hash_to_first

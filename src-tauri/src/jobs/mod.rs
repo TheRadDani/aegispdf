@@ -6,7 +6,7 @@ use std::thread;
 
 use lopdf::Document;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 use uuid::Uuid;
 
 use crate::core::detection;
@@ -70,6 +70,9 @@ impl JobQueue {
     #[must_use]
     pub fn spawn(app: AppHandle) -> Self {
         let (tx, rx) = mpsc::channel::<QueuedJob>();
+        let pdfium_lib = app
+            .try_state::<crate::PdfiumPath>()
+            .and_then(|s| s.0.clone());
         let worker = thread::spawn(move || {
             while let Ok(job) = rx.recv() {
                 let emit = |evt: JobEvent| {
@@ -82,7 +85,7 @@ impl JobQueue {
                     result: None,
                     error: None,
                 });
-                let outcome = run_job(&job.id, &job.kind, &emit);
+                let outcome = run_job(&job.id, &job.kind, &emit, pdfium_lib.as_deref());
                 match outcome {
                     Ok(value) => emit(JobEvent {
                         job_id: job.id,
@@ -123,6 +126,7 @@ fn run_job(
     job_id: &str,
     kind: &JobKind,
     emit: &impl Fn(JobEvent),
+    pdfium_path: Option<&std::path::Path>,
 ) -> Result<serde_json::Value, AegisError> {
     match kind {
         JobKind::Merge { inputs, output } => {
@@ -155,7 +159,7 @@ fn run_job(
                 error: None,
             });
             let doc = Document::load(path).map_err(|e| AegisError::pdf("load", e.to_string()))?;
-            let analysis = detection::analyze_pages(&doc, 8.0)?;
+            let analysis = detection::analyze_pages(&doc, 8.0, pdfium_path)?;
             Ok(serde_json::to_value(&analysis).map_err(|e| AegisError::Job(e.to_string()))?)
         }
         JobKind::Ocr {
@@ -179,7 +183,7 @@ fn run_job(
                     result: None,
                     error: None,
                 });
-                let png = pdfium_renderer::render_page_png(&doc, idx, 2000)
+                let png = pdfium_renderer::render_page_png(&doc, idx, 2000, pdfium_path)
                     .map_err(|e| AegisError::Render(e.to_string()))?;
                 let text = ocr::ocr_png_bytes(&png, lang)?;
                 ocr::append_page_text(&out_path, idx, &text)?;
