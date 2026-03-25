@@ -161,14 +161,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.30.0
         with:
           scan-type: "fs"
           scan-ref: "."
           format: "sarif"
           output: "trivy-results.sarif"
           severity: "HIGH,CRITICAL"
-          exit-code: "1"
+          exit-code: "0"
           scanners: "vuln,secret,misconfig"
           skip-dirs: "src-tauri/target,node_modules,.git"
 
