@@ -182,27 +182,28 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Install ImageMagick (icon generation)
-        shell: pwsh
-        run: |
-          winget install --id ImageMagick.ImageMagick --exact `
-            --accept-source-agreements --accept-package-agreements -h || true
-
       - name: Generate icons from brand logo
         shell: pwsh
         run: |
-          $inkscape = "C:\Program Files\Inkscape\bin\inkscape.exe"
-          $magick   = "magick"
-          $svg = "assets\aegispdf_logo.svg"   # canonical brand logo
+          $svg = "assets\aegispdf_logo.svg"
           $out = "src-tauri\icons"
           if (-not (Test-Path $svg)) { throw "Brand SVG not found: $svg" }
+          New-Item -ItemType Directory -Path $out -Force | Out-Null
 
-          function Render($size, $dest) {
+          $inkscape = "C:\Program Files\Inkscape\bin\inkscape.exe"
+
+          function Render([int]$size, [string]$dest) {
               if (Test-Path $inkscape) {
-                  & $inkscape --export-type=png --export-width=$size --export-height=$size `
-                               --export-filename=$dest $svg 2>$null
+                  & $inkscape --export-type=png `
+                              --export-width=$size --export-height=$size `
+                              --export-filename=$dest $svg 2>$null
               } else {
-                  & $magick convert -background none -resize "${size}x${size}" $svg $dest
+                  # IMv7: use 'magick' directly, not deprecated 'magick convert'
+                  & magick -background none -density 300 `
+                           -resize "${size}x${size}" $svg $dest
+              }
+              if (-not (Test-Path $dest)) {
+                  throw "Failed to render ${size}x${size} PNG to $dest"
               }
           }
 
@@ -211,8 +212,12 @@ jobs:
           Render 256 "$out\256x256.png"
           Copy-Item "$out\256x256.png" "$out\128x128@2x.png"
 
-          # ICO
-          & $magick convert "$out\32x32.png" "$out\128x128.png" "$out\256x256.png" "$out\icon.ico"
+          # ICO — IMv7 syntax (no 'convert' subcommand)
+          & magick "$out\32x32.png" "$out\128x128.png" "$out\256x256.png" "$out\icon.ico"
+          if (-not (Test-Path "$out\icon.ico")) { throw "ICO generation failed" }
+
+          # ICNS placeholder (not used in Windows builds, but Tauri expects the file)
+          Copy-Item "$out\256x256.png" "$out\icon.icns" -ErrorAction SilentlyContinue
 
           # ICNS placeholder (not needed on Windows builds)
           Copy-Item "$out\256x256.png" "$out\icon.icns" -ErrorAction SilentlyContinue
