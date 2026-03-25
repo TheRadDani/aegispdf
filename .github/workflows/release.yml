@@ -1,19 +1,14 @@
 name: Release
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
   workflow_dispatch:
     inputs:
       tag:
         description: "Version tag (e.g. v0.2.0)"
-        required: false
-        default: "v0.0.0-dev"
+        required: true
 
-# Release runs after CI completes successfully for a tagged commit, or manually
-# for an explicit tag via workflow_dispatch.
+# Release is dispatched explicitly from the CI workflow after tagged CI passes,
+# or can be invoked manually for an explicit tag via workflow_dispatch.
 permissions:
   contents: write
   actions: read
@@ -40,54 +35,22 @@ jobs:
           MANUAL_TAG: ${{ inputs.tag }}
         with:
           script: |
-            if (context.eventName === 'workflow_dispatch') {
-              const manualTag = process.env.MANUAL_TAG;
-              if (!manualTag) {
-                core.setFailed('workflow_dispatch requires an explicit tag input.');
-                return;
-              }
-
-              core.setOutput('should_release', 'true');
-              core.setOutput('release_tag', manualTag);
-              core.setOutput('target_ref', manualTag);
-              console.log(`Manual release requested for tag ${manualTag}`);
+            const manualTag = process.env.MANUAL_TAG;
+            if (!manualTag) {
+              core.setFailed('workflow_dispatch requires an explicit tag input.');
               return;
             }
 
-            const workflowRun = context.payload.workflow_run;
-
-            if (!workflowRun || workflowRun.conclusion !== 'success') {
-              core.setOutput('should_release', 'false');
-              console.log('Skipping release: CI workflow did not complete successfully.');
-              return;
-            }
-
-            if (workflowRun.event !== 'push') {
-              core.setOutput('should_release', 'false');
-              console.log(`Skipping release: CI completed for unsupported event ${workflowRun.event}.`);
-              return;
-            }
-
-            const tags = await github.paginate(github.rest.repos.listTags, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 100,
-            });
-
-            const matchingTag = tags.find(tag =>
-              tag.name.startsWith('v') && tag.commit && tag.commit.sha === workflowRun.head_sha
-            );
-
-            if (!matchingTag) {
-              core.setOutput('should_release', 'false');
-              console.log(`Skipping release: no v* tag points at ${workflowRun.head_sha}.`);
+            if (!manualTag.startsWith('v')) {
+              core.setFailed(`Release tags must start with v. Received: ${manualTag}`);
               return;
             }
 
             core.setOutput('should_release', 'true');
-            core.setOutput('release_tag', matchingTag.name);
-            core.setOutput('target_ref', matchingTag.name);
-            console.log(`Release enabled for tag ${matchingTag.name} from CI run ${workflowRun.html_url}`);
+            core.setOutput('release_tag', manualTag);
+            core.setOutput('target_ref', manualTag);
+
+            console.log(`Release enabled for tag ${manualTag}`);
 
   # ─────────────────────────────────────────────────────────────────────────
   # Generate Tauri icons once on Linux and reuse across bundle jobs
