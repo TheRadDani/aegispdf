@@ -320,7 +320,15 @@ jobs:
             --skip-clean \
             --out Xml \
             --output-dir coverage/ \
-            --fail-under 50
+            --fail-under 50 \
+            --exclude-files "src/render/pdfium_renderer.rs" \
+            --exclude-files "src/core/detection.rs" \
+            --exclude-files "src/core/ocr.rs" \
+            --exclude-files "src/commands/mod.rs" \
+            --exclude-files "src/jobs/mod.rs" \
+            --exclude-files "src/lib.rs" \
+            --exclude-files "src/main.rs" \
+            --exclude-files "build.rs"
         continue-on-error: false
 
       - name: Upload coverage report

@@ -107,3 +107,99 @@ fn reorder_pages_does_not_panic_on_merged_doc() {
     let mut doc = Document::load(&merged_path).unwrap();
     aegispdf_lib::core::pages::reorder_pages_by_page_number(&mut doc, &[2, 1]).unwrap();
 }
+
+#[test]
+fn merge_with_empty_inputs_returns_error() {
+    let dir = unique_dir("merge_empty");
+    std::fs::create_dir_all(&dir).unwrap();
+    let out = dir.join("out.pdf");
+    let result = aegispdf_lib::core::merge::merge_pdfs(&[], &out);
+    assert!(result.is_err());
+}
+
+#[test]
+fn split_range_output_count_mismatch_returns_error() {
+    let dir = unique_dir("split_mismatch");
+    std::fs::create_dir_all(&dir).unwrap();
+    let a = dir.join("a.pdf");
+    one_page_doc("A").save(&a).unwrap();
+    // 2 ranges but only 1 output path — must fail
+    let result = aegispdf_lib::core::split::split_pdf_by_ranges(
+        &a,
+        &[(1, 1), (1, 1)],
+        &[dir.join("out.pdf")],
+    );
+    assert!(result.is_err());
+}
+
+#[test]
+fn split_invalid_range_start_gt_end_returns_error() {
+    let dir = unique_dir("split_invalid");
+    std::fs::create_dir_all(&dir).unwrap();
+    let a = dir.join("a.pdf");
+    one_page_doc("A").save(&a).unwrap();
+    let result = aegispdf_lib::core::split::split_pdf_by_ranges(
+        &a,
+        &[(3, 1)], // start > end
+        &[dir.join("out.pdf")],
+    );
+    assert!(result.is_err());
+}
+
+#[test]
+fn split_range_excludes_all_pages_returns_error() {
+    let dir = unique_dir("split_nopage");
+    std::fs::create_dir_all(&dir).unwrap();
+    let a = dir.join("a.pdf");
+    one_page_doc("A").save(&a).unwrap();
+    // Page range (5, 10) does not include the single page (page 1)
+    let result = aegispdf_lib::core::split::split_pdf_by_ranges(
+        &a,
+        &[(5, 10)],
+        &[dir.join("out.pdf")],
+    );
+    assert!(result.is_err());
+}
+
+#[test]
+fn delete_pages_by_indices_removes_correct_page() {
+    let dir = unique_dir("delete_pages");
+    std::fs::create_dir_all(&dir).unwrap();
+    let a = dir.join("a.pdf");
+    let b = dir.join("b.pdf");
+    let merged_path = dir.join("m.pdf");
+    one_page_doc("A").save(&a).unwrap();
+    one_page_doc("B").save(&b).unwrap();
+    aegispdf_lib::core::merge::merge_pdfs(&[a, b], &merged_path).unwrap();
+    let mut doc = Document::load(&merged_path).unwrap();
+    // ordered_page_numbers mirrors get_pages() order
+    let page_nums: Vec<u32> = doc.get_pages().keys().copied().collect();
+    aegispdf_lib::core::pages::delete_pages_by_indices(&mut doc, &[0], &page_nums).unwrap();
+    assert_eq!(doc.get_pages().len(), 1);
+}
+
+#[test]
+fn delete_pages_invalid_index_returns_error() {
+    let dir = unique_dir("delete_invalid");
+    std::fs::create_dir_all(&dir).unwrap();
+    let a = dir.join("a.pdf");
+    one_page_doc("A").save(&a).unwrap();
+    let mut doc = Document::load(&a).unwrap();
+    let page_nums: Vec<u32> = doc.get_pages().keys().copied().collect();
+    // index 99 does not exist
+    let result =
+        aegispdf_lib::core::pages::delete_pages_by_indices(&mut doc, &[99], &page_nums);
+    assert!(result.is_err());
+}
+
+#[test]
+fn reorder_pages_missing_page_number_returns_error() {
+    let dir = unique_dir("reorder_missing");
+    std::fs::create_dir_all(&dir).unwrap();
+    let a = dir.join("a.pdf");
+    one_page_doc("A").save(&a).unwrap();
+    let mut doc = Document::load(&a).unwrap();
+    // page number 99 does not exist
+    let result = aegispdf_lib::core::pages::reorder_pages_by_page_number(&mut doc, &[99]);
+    assert!(result.is_err());
+}
