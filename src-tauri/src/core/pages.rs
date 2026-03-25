@@ -43,7 +43,7 @@ pub fn delete_pages_by_indices(
     for index in indices {
         let page_number = ordered_page_numbers
             .get(*index)
-            .ok_or_else(|| anyhow::anyhow!("invalid page index {}", index))?;
+            .ok_or_else(|| anyhow::anyhow!("invalid page index {index}"))?;
         to_delete.push(*page_number);
     }
     document.delete_pages(&to_delete);
