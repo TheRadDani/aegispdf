@@ -260,7 +260,10 @@ jobs:
           path: src-tauri/icons/
 
       - name: Build Tauri bundles (msi + nsis)
-        run: npm run tauri build -- --bundles msi,nsis --config '{"bundle":{"resources":{"libs/pdfium.dll":"libs/pdfium.dll"}}}'
+        shell: pwsh
+        run: |
+          $tauriConfig = '{"bundle":{"resources":{"libs/pdfium.dll":"libs/pdfium.dll"}}}'
+          npm run tauri build -- --bundles msi,nsis --config "$tauriConfig"
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
