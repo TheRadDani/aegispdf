@@ -216,6 +216,7 @@ jobs:
       
       - name: Apply automatic formatting fixes
         if: steps.fmt.outcome == 'failure'
+        working-directory: src-tauri
         run: cargo fmt --all
 
       - name: Commit formatting changes
