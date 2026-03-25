@@ -14,7 +14,7 @@ fn doc_to_bytes(document: &Document) -> anyhow::Result<Vec<u8>> {
     Ok(bytes)
 }
 
-/// Load PDFium from a bundled resource path first, falling back to system library.
+/// Load `PDFium` from a bundled resource path first, falling back to system library.
 fn load_pdfium(bundled_path: Option<&std::path::Path>) -> anyhow::Result<Pdfium> {
     if let Some(path) = bundled_path {
         if path.exists() {

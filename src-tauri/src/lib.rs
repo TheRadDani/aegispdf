@@ -26,7 +26,7 @@ impl Default for Workspaces {
     }
 }
 
-/// Resolved path to the bundled PDFium shared library (if present).
+/// Resolved path to the bundled `PDFium` shared library (if present).
 pub struct PdfiumPath(pub Option<std::path::PathBuf>);
 
 /// Extract the first file-path argument that looks like a PDF or .aegis file.
