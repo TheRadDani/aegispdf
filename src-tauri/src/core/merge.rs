@@ -21,15 +21,15 @@ pub fn merge_pdfs(inputs: &[PathBuf], output: &PathBuf) -> AegisResult<()> {
     }
     let mut documents: Vec<Document> = Vec::with_capacity(inputs.len());
     for p in inputs {
-        let d = Document::load(p).map_err(|e| AegisError::Merge(format!("{}: {e}", p.display())))?;
+        let d =
+            Document::load(p).map_err(|e| AegisError::Merge(format!("{}: {e}", p.display())))?;
         documents.push(d);
     }
     let merged = merge_documents(documents).map_err(|e| AegisError::Merge(e.to_string()))?;
     let mut out = merged;
     out.prune_objects();
     out.compress();
-    out
-        .save(output)
+    out.save(output)
         .map_err(|e| AegisError::pdf("save", e.to_string()))?;
     Ok(())
 }
@@ -75,9 +75,7 @@ fn merge_documents(documents: Vec<Document>) -> anyhow::Result<Document> {
                     if let Some((_, ref object)) = pages_object {
                         if let Ok(old_dictionary) = object.as_dict() {
                             for (k, v) in old_dictionary.as_hashmap().iter() {
-                                dictionary
-                                    .as_hashmap_mut()
-                                    .insert(k.clone(), v.clone());
+                                dictionary.as_hashmap_mut().insert(k.clone(), v.clone());
                             }
                         }
                     }
@@ -99,23 +97,24 @@ fn merge_documents(documents: Vec<Document>) -> anyhow::Result<Document> {
         }
     }
 
-    let (page_id, page_object) = pages_object.ok_or_else(|| anyhow::anyhow!("pages root not found"))?;
-    let (catalog_id, catalog_object) = catalog_object.ok_or_else(|| anyhow::anyhow!("catalog root not found"))?;
+    let (page_id, page_object) =
+        pages_object.ok_or_else(|| anyhow::anyhow!("pages root not found"))?;
+    let (catalog_id, catalog_object) =
+        catalog_object.ok_or_else(|| anyhow::anyhow!("catalog root not found"))?;
 
     for (object_id, object) in &documents_pages {
         if let Ok(dictionary) = object.as_dict() {
             let mut dictionary = dictionary.clone();
             dictionary.set(b"Parent", Object::Reference(page_id));
-            document.objects.insert(*object_id, Object::Dictionary(dictionary));
+            document
+                .objects
+                .insert(*object_id, Object::Dictionary(dictionary));
         }
     }
 
     if let Ok(dictionary) = page_object.as_dict() {
         let mut dictionary = dictionary.clone();
-        dictionary.set(
-            b"Count",
-            Object::Integer(documents_pages.len() as i64),
-        );
+        dictionary.set(b"Count", Object::Integer(documents_pages.len() as i64));
         dictionary.set(
             b"Kids",
             Object::Array(
@@ -125,19 +124,21 @@ fn merge_documents(documents: Vec<Document>) -> anyhow::Result<Document> {
                     .collect::<Vec<_>>(),
             ),
         );
-        document.objects.insert(page_id, Object::Dictionary(dictionary));
+        document
+            .objects
+            .insert(page_id, Object::Dictionary(dictionary));
     }
 
     if let Ok(dictionary) = catalog_object.as_dict() {
         let mut dictionary = dictionary.clone();
         dictionary.set(b"Pages", Object::Reference(page_id));
         dictionary.remove(b"Outlines");
-        document.objects.insert(catalog_id, Object::Dictionary(dictionary));
+        document
+            .objects
+            .insert(catalog_id, Object::Dictionary(dictionary));
     }
 
-    document
-        .trailer
-        .set(b"Root", Object::Reference(catalog_id));
+    document.trailer.set(b"Root", Object::Reference(catalog_id));
     document.max_id = document.objects.len() as u32;
     document.renumber_objects();
     document.adjust_zero_pages();

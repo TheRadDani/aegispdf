@@ -22,17 +22,20 @@ pub struct OpenPdfResponse {
     pub source_path: String,
 }
 
-fn workspaces<'a>(state: &'a State<'_, Workspaces>) -> AegisResult<std::sync::MutexGuard<'a, std::collections::HashMap<String, PdfWorkspace>>> {
-    state
-        .documents
-        .lock()
-        .map_err(|_| AegisError::LockPoisoned)
+fn workspaces<'a>(
+    state: &'a State<'_, Workspaces>,
+) -> AegisResult<std::sync::MutexGuard<'a, std::collections::HashMap<String, PdfWorkspace>>> {
+    state.documents.lock().map_err(|_| AegisError::LockPoisoned)
 }
 
 #[tauri::command]
-pub fn open_pdf(path: String, state: State<'_, Workspaces>) -> Result<OpenPdfResponse, AegisErrorResponse> {
+pub fn open_pdf(
+    path: String,
+    state: State<'_, Workspaces>,
+) -> Result<OpenPdfResponse, AegisErrorResponse> {
     let path_buf = PathBuf::from(&path);
-    let workspace = PdfWorkspace::open(&path_buf).map_err(|e| AegisError::pdf("open", e.to_string()))?;
+    let workspace =
+        PdfWorkspace::open(&path_buf).map_err(|e| AegisError::pdf("open", e.to_string()))?;
     let page_count = workspace.page_count();
     let page_infos = workspace.page_infos();
     let file_hash = workspace.file_hash.clone();
@@ -62,8 +65,12 @@ pub fn get_page_thumbnail(
     let workspace = lock
         .get_mut(&document_id)
         .ok_or(AegisError::DocumentNotFound)?;
-    crate::render::pdfium_renderer::render_page_thumbnail_base64(&workspace.document, page_index, zoom)
-        .map_err(|e| AegisErrorResponse::from(AegisError::Render(e.to_string())))
+    crate::render::pdfium_renderer::render_page_thumbnail_base64(
+        &workspace.document,
+        page_index,
+        zoom,
+    )
+    .map_err(|e| AegisErrorResponse::from(AegisError::Render(e.to_string())))
 }
 
 #[tauri::command]
@@ -99,7 +106,10 @@ pub fn delete_pages(
 }
 
 #[tauri::command]
-pub fn get_page_list(document_id: String, state: State<'_, Workspaces>) -> Result<Vec<PageInfo>, AegisErrorResponse> {
+pub fn get_page_list(
+    document_id: String,
+    state: State<'_, Workspaces>,
+) -> Result<Vec<PageInfo>, AegisErrorResponse> {
     let lock = workspaces(&state).map_err(AegisErrorResponse::from)?;
     let workspace = lock.get(&document_id).ok_or(AegisError::DocumentNotFound)?;
     Ok(workspace.page_infos())
@@ -139,21 +149,27 @@ pub fn split_pdf_paths(
         )));
     }
     let outs: Vec<PathBuf> = outputs.iter().map(PathBuf::from).collect();
-    split::split_pdf_by_ranges(&PathBuf::from(source), &ranges, &outs).map_err(AegisErrorResponse::from)
+    split::split_pdf_by_ranges(&PathBuf::from(source), &ranges, &outs)
+        .map_err(AegisErrorResponse::from)
 }
 
 /// One PDF per page in `output_dir` (`page_NNN.pdf`).
 #[tauri::command]
-pub fn split_pdf_each_page(source: String, output_dir: String) -> Result<Vec<String>, AegisErrorResponse> {
+pub fn split_pdf_each_page(
+    source: String,
+    output_dir: String,
+) -> Result<Vec<String>, AegisErrorResponse> {
     let src = PathBuf::from(&source);
     let dir = PathBuf::from(&output_dir);
     std::fs::create_dir_all(&dir).map_err(AegisError::from)?;
-    let doc = Document::load(&src).map_err(|e| AegisErrorResponse::from(AegisError::pdf("load", e.to_string())))?;
+    let doc = Document::load(&src)
+        .map_err(|e| AegisErrorResponse::from(AegisError::pdf("load", e.to_string())))?;
     let pages: Vec<u32> = doc.get_pages().keys().copied().collect();
     let mut outs = Vec::new();
     for p in pages {
         let out = dir.join(format!("page_{p:03}.pdf"));
-        split::split_pdf_by_ranges(&src, &[(p, p)], &[out.clone()]).map_err(AegisErrorResponse::from)?;
+        split::split_pdf_by_ranges(&src, &[(p, p)], &[out.clone()])
+            .map_err(AegisErrorResponse::from)?;
         outs.push(out.to_string_lossy().to_string());
     }
     Ok(outs)
@@ -188,23 +204,34 @@ pub fn auto_clean_workspace(
 }
 
 #[tauri::command]
-pub fn load_aegis(pdf_path: String, file_hash: String) -> Result<AnnotationStore, AegisErrorResponse> {
-    AnnotationStore::load_for_pdf(&PathBuf::from(pdf_path), &file_hash).map_err(AegisErrorResponse::from)
+pub fn load_aegis(
+    pdf_path: String,
+    file_hash: String,
+) -> Result<AnnotationStore, AegisErrorResponse> {
+    AnnotationStore::load_for_pdf(&PathBuf::from(pdf_path), &file_hash)
+        .map_err(AegisErrorResponse::from)
 }
 
 #[tauri::command]
 pub fn save_aegis(pdf_path: String, store: AnnotationStore) -> Result<(), AegisErrorResponse> {
-    store.save(&PathBuf::from(pdf_path)).map_err(AegisErrorResponse::from)
+    store
+        .save(&PathBuf::from(pdf_path))
+        .map_err(AegisErrorResponse::from)
 }
 
 #[tauri::command]
 pub fn submit_job(kind: JobKind, queue: State<'_, JobQueue>) -> Result<String, AegisErrorResponse> {
-    queue.submit(kind).map_err(|e| AegisErrorResponse::from(AegisError::Job(e)))
+    queue
+        .submit(kind)
+        .map_err(|e| AegisErrorResponse::from(AegisError::Job(e)))
 }
 
 /// Write current workspace PDF to a temp file for OCR / analyze jobs (releases lock before heavy work).
 #[tauri::command]
-pub fn export_pdf_temp(document_id: String, state: State<'_, Workspaces>) -> Result<String, AegisErrorResponse> {
+pub fn export_pdf_temp(
+    document_id: String,
+    state: State<'_, Workspaces>,
+) -> Result<String, AegisErrorResponse> {
     let mut lock = workspaces(&state).map_err(AegisErrorResponse::from)?;
     let workspace = lock
         .get_mut(&document_id)

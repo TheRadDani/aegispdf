@@ -29,20 +29,18 @@ impl Default for Workspaces {
 /// Used when the OS launches AegisPDF via a file association (e.g. double-click
 /// a .pdf on Windows, or `xdg-open file.pdf` on Linux).
 fn extract_file_arg() -> Option<String> {
-    std::env::args()
-        .skip(1)
-        .find(|arg| {
-            if arg.starts_with('-') {
-                return false;
-            }
-            let path = std::path::Path::new(arg);
-            let ext = path
-                .extension()
-                .and_then(|e| e.to_str())
-                .unwrap_or("")
-                .to_ascii_lowercase();
-            (ext == "pdf" || ext == "aegis") && path.exists()
-        })
+    std::env::args().skip(1).find(|arg| {
+        if arg.starts_with('-') {
+            return false;
+        }
+        let path = std::path::Path::new(arg);
+        let ext = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        (ext == "pdf" || ext == "aegis") && path.exists()
+    })
 }
 
 pub fn run() {

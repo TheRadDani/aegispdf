@@ -2,7 +2,10 @@ use lopdf::{Document, Object};
 
 /// Reorder pages by assigning root `/Pages` `/Kids` in the given order (flat page trees).
 /// PDF page labels are 1-based keys from [`Document::get_pages`].
-pub fn reorder_pages_by_page_number(document: &mut Document, new_order: &[u32]) -> anyhow::Result<()> {
+pub fn reorder_pages_by_page_number(
+    document: &mut Document,
+    new_order: &[u32],
+) -> anyhow::Result<()> {
     let pages_map = document.get_pages();
     for pn in new_order {
         if !pages_map.contains_key(pn) {
@@ -26,10 +29,7 @@ pub fn reorder_pages_by_page_number(document: &mut Document, new_order: &[u32]) 
 
     let dict = document.get_dictionary_mut(pages_id)?;
     dict.set(b"Kids", Object::Array(kids));
-    dict.set(
-        b"Count",
-        Object::Integer(new_order.len() as i64),
-    );
+    dict.set(b"Count", Object::Integer(new_order.len() as i64));
     Ok(())
 }
 
@@ -52,6 +52,8 @@ pub fn delete_pages_by_indices(
     }
 
     document.adjust_zero_pages();
-    document.objects.retain(|_, object| !matches!(object, Object::Null));
+    document
+        .objects
+        .retain(|_, object| !matches!(object, Object::Null));
     Ok(())
 }

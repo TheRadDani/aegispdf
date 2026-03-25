@@ -3,7 +3,10 @@ use lopdf::{Document, Object};
 /// Remove sensitive metadata keys from trailer/info dictionary.
 pub fn strip_metadata(document: &mut Document) {
     if let Ok(info_ref) = document.trailer.get(b"Info").and_then(Object::as_reference) {
-        if let Ok(info) = document.get_object_mut(info_ref).and_then(Object::as_dict_mut) {
+        if let Ok(info) = document
+            .get_object_mut(info_ref)
+            .and_then(Object::as_dict_mut)
+        {
             info.remove(b"Author");
             info.remove(b"Creator");
             info.remove(b"Producer");

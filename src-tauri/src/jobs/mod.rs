@@ -104,8 +104,7 @@ impl JobQueue {
 
     pub fn submit(&self, kind: JobKind) -> Result<String, String> {
         let id = Uuid::new_v4().to_string();
-        self
-            .tx
+        self.tx
             .send(QueuedJob {
                 id: id.clone(),
                 kind,

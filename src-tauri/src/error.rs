@@ -60,22 +60,14 @@ pub struct AegisErrorResponse {
 impl From<AegisError> for AegisErrorResponse {
     fn from(e: AegisError) -> Self {
         let (code, message, details) = match &e {
-            AegisError::Io(err) => (
-                "io".to_string(),
-                err.to_string(),
-                None,
-            ),
-            AegisError::Pdf { code, message } => {
-                (format!("pdf::{code}"), message.clone(), None)
-            }
+            AegisError::Io(err) => ("io".to_string(), err.to_string(), None),
+            AegisError::Pdf { code, message } => (format!("pdf::{code}"), message.clone(), None),
             AegisError::InvalidArgument(m) => ("invalid_argument".to_string(), m.clone(), None),
             AegisError::DocumentNotFound => ("document_not_found".to_string(), e.to_string(), None),
             AegisError::LockPoisoned => ("lock_poisoned".to_string(), e.to_string(), None),
-            AegisError::ExternalTool { tool, message } => (
-                format!("external::{tool}"),
-                message.clone(),
-                None,
-            ),
+            AegisError::ExternalTool { tool, message } => {
+                (format!("external::{tool}"), message.clone(), None)
+            }
             AegisError::Job(m) => ("job".to_string(), m.clone(), None),
             AegisError::Render(m) => ("render".to_string(), m.clone(), None),
             AegisError::Merge(m) => ("merge".to_string(), m.clone(), None),
@@ -93,5 +85,6 @@ impl From<AegisError> for AegisErrorResponse {
 pub type AegisResult<T> = Result<T, AegisError>;
 
 pub fn to_invoke_err(e: AegisError) -> String {
-    serde_json::to_string(&AegisErrorResponse::from(e)).unwrap_or_else(|_| r#"{"code":"serialize","message":"error"}"#.to_string())
+    serde_json::to_string(&AegisErrorResponse::from(e))
+        .unwrap_or_else(|_| r#"{"code":"serialize","message":"error"}"#.to_string())
 }
