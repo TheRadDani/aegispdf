@@ -15,7 +15,7 @@ fn doc_to_bytes(document: &Document) -> anyhow::Result<Vec<u8>> {
     Ok(bytes)
 }
 
-/// Try to locate the PDFium shared library by probing multiple paths in order.
+/// Try to locate the `PDFium` shared library by probing multiple paths in order.
 /// Returns the first existing path, or `None` (which means fall back to system search).
 fn find_pdfium_library(tauri_resource_hint: Option<&Path>) -> Option<PathBuf> {
     let mut candidates: Vec<PathBuf> = Vec::new();
