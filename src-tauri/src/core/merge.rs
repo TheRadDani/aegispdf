@@ -139,7 +139,9 @@ fn merge_documents(documents: Vec<Document>) -> anyhow::Result<Document> {
     }
 
     document.trailer.set(b"Root", Object::Reference(catalog_id));
-    document.max_id = document.objects.len() as u32;
+    use std::convert::TryFrom;
+    document.max_id = u32::try_from(document.objects.len())
+        .map_err(|_| AegisError::InvalidArgument("Too many objects".to_string()))?;
     document.renumber_objects();
     document.adjust_zero_pages();
     Ok(document)
