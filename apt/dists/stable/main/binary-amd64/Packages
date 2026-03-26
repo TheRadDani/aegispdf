@@ -37,10 +37,10 @@ Maintainer: AegisPDF
 Installed-Size: 22442
 Depends: libwebkit2gtk-4.1-0, libgtk-3-0, libglib2.0-0, libgdk-pixbuf-2.0-0, libxcb1, libxcb-render0, xdg-utils, libwebkit2gtk-4.1-0, libgtk-3-0
 Filename: pool/main/AegisPDF_0.2.3_amd64.deb
-Size: 7840694
-MD5sum: c4fb441704d9a7dfa72bd327e003957a
-SHA1: 8c4a1f559beeaa457d34a634122583dc0d023881
-SHA256: b87e8b8363d991462152f2cd615e2db3c5d0b4906947f4eff8a7fe3e61765b27
+Size: 7841122
+MD5sum: 6512ee216e31decada281289bdaf49fb
+SHA1: 1dad32c400b1224c5d3f8fcc89b161569f21c363
+SHA256: f42da3fbbf01959bf7f8d60f77c3675f6a2905f5975a456f9c4fb0fdc02c4f02
 Priority: optional
 Homepage: https://github.com/aegispdf/aegispdf
 Description: Privacy-focused offline PDF workspace
