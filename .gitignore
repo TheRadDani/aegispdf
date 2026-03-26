@@ -3,6 +3,9 @@ dist
 src-tauri/target
 *.log
 
+# CI-generated config overlay (written during release builds)
+src-tauri/tauri.pdfium.conf.json
+
 # Generated icons (created by scripts/gen-icons.sh — source is assets/aegispdf_logo.svg)
 src-tauri/icons/*.png
 src-tauri/icons/*.ico

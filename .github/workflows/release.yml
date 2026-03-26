@@ -186,8 +186,20 @@ jobs:
         working-directory: src-tauri
         run: cargo test
 
+      - name: Write bundle config overlay (PDFium resource)
+        run: |
+          cat > src-tauri/tauri.pdfium.conf.json <<'EOF'
+          {
+            "bundle": {
+              "resources": {
+                "libs/libpdfium.so": "libs/libpdfium.so"
+              }
+            }
+          }
+          EOF
+
       - name: Build Tauri bundles (deb + rpm + appimage)
-        run: npm run tauri build -- --bundles deb,rpm,appimage --config '{"bundle":{"resources":{"libs/libpdfium.so":"libs/libpdfium.so"}}}'
+        run: npm run tauri build -- --bundles deb,rpm,appimage --config src-tauri/tauri.pdfium.conf.json
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -259,11 +271,21 @@ jobs:
           name: tauri-icons
           path: src-tauri/icons/
 
-      - name: Build Tauri bundles (msi + nsis)
+      - name: Write bundle config overlay (PDFium resource)
         shell: pwsh
         run: |
-          $tauriConfig = '{"bundle":{"resources":{"libs/pdfium.dll":"libs/pdfium.dll"}}}'
-          npm run tauri build -- --bundles msi,nsis --config "$tauriConfig"
+          @'
+          {
+            "bundle": {
+              "resources": {
+                "libs/pdfium.dll": "libs/pdfium.dll"
+              }
+            }
+          }
+          '@ | Set-Content -Path src-tauri/tauri.pdfium.conf.json -Encoding UTF8
+
+      - name: Build Tauri bundles (msi + nsis)
+        run: npm run tauri build -- --bundles msi,nsis --config src-tauri/tauri.pdfium.conf.json
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
