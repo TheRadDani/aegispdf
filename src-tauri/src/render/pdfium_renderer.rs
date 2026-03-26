@@ -54,7 +54,7 @@ fn find_pdfium_library(tauri_resource_hint: Option<&Path>) -> Option<PathBuf> {
     candidates.into_iter().find(|p| p.exists())
 }
 
-/// Load PDFium, trying bundled/known paths first, then system library search.
+/// Load `PDFium`, trying bundled/known paths first, then system library search.
 fn load_pdfium(hint: Option<&Path>) -> anyhow::Result<Pdfium> {
     if let Some(lib_path) = find_pdfium_library(hint) {
         let path_str = lib_path
@@ -67,7 +67,7 @@ fn load_pdfium(hint: Option<&Path>) -> anyhow::Result<Pdfium> {
     Ok(Pdfium::new(bindings))
 }
 
-/// Render one page to a `DynamicImage` via PDFium's built-in `as_image()`.
+/// Render one page to a `DynamicImage` via `PDFium`'s built-in `as_image()`.
 fn render_page_image(
     pdfium: &Pdfium,
     pdf_bytes: Vec<u8>,
