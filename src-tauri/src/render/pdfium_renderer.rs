@@ -88,7 +88,7 @@ fn render_page_image(
 /// Raw PNG bytes — used by OCR pipeline.
 ///
 /// # Errors
-/// Returns an error if PDFium cannot be loaded, the PDF parsed, or the page rendered.
+/// Returns an error if `PDFium` cannot be loaded, the PDF parsed, or the page rendered.
 pub fn render_page_png(
     document: &Document,
     page_index: usize,
@@ -127,7 +127,7 @@ pub fn render_page_thumbnail_base64(
 /// Returns `(sha256_hex, mean_abs_deviation_from_white)`.
 ///
 /// # Errors
-/// Returns an error if PDFium cannot be loaded, the PDF parsed, or the page rendered.
+/// Returns an error if `PDFium` cannot be loaded, the PDF parsed, or the page rendered.
 pub fn page_render_fingerprint(
     document: &Document,
     page_index: usize,

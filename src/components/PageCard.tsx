@@ -83,9 +83,12 @@ export default function PageCard({ documentId, page, zoom, isSelected, annotatio
     >
       <div className="page-thumb">
         {loading ? (
-          <span>Loading...</span>
+          <span className="page-loading">Loading...</span>
         ) : hasError ? (
-          <span className="page-error" title={error}>Preview error</span>
+          <div className="page-error">
+            <span className="page-error-icon">&#x26A0;</span>
+            <span className="page-error-text">{error}</span>
+          </div>
         ) : hasThumbnail ? (
           <>
             <img src={thumb} alt={`Page ${page.page_number}`} draggable={false} />

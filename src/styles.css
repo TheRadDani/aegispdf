@@ -126,6 +126,33 @@ button:disabled {
   object-fit: contain;
 }
 
+.page-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.page-error-icon {
+  font-size: 1.5rem;
+  color: #e63946;
+}
+
+.page-error-text {
+  font-size: 0.7rem;
+  color: #9ea7b8;
+  word-break: break-word;
+  max-height: 4.5rem;
+  overflow: auto;
+}
+
+.page-loading {
+  color: #7d8a9e;
+  font-size: 0.85rem;
+}
+
 .ann-overlay {
   position: absolute;
   inset: 0;
