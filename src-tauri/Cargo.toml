@@ -19,7 +19,7 @@ base64 = "0.22.1"
 flate2 = "1.1.2"
 image = { version = "0.25.8", default-features = false, features = ["png"] }
 lopdf = "0.38.0"
-pdfium-render = "0.8.29"
+pdfium-render = { version = "0.8.29", features = ["image"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 sha2 = "0.10.9"
