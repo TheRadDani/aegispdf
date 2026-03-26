@@ -115,24 +115,61 @@ export default function App() {
   };
 
   const onMerge = async () => {
-    const files = await open({
+    // If a document is already open, the user only needs to pick the PDFs
+    // to merge INTO it. Otherwise, they select all files at once.
+    const dialogResult = await open({
       multiple: true,
+      title: doc
+        ? "Select PDF(s) to merge into the current document"
+        : "Select PDFs to merge (2 or more)",
       filters: [{ name: "PDF", extensions: ["pdf"] }]
     });
-    if (!Array.isArray(files) || files.length < 2) {return;}
+
+    // Normalize the dialog result to a string array.
+    // Tauri's open() returns: null (cancelled) | string (one file) | string[] (multiple).
+    let picked: string[];
+    if (dialogResult === null) {
+      return;
+    } else if (typeof dialogResult === "string") {
+      picked = [dialogResult];
+    } else if (Array.isArray(dialogResult)) {
+      picked = dialogResult;
+    } else {
+      return;
+    }
+
+    // Build the full list of inputs: current document first (if open), then picked files.
+    let inputs: string[];
+    if (doc) {
+      // Export the current workspace state to a temp file so it includes
+      // any reorders/deletes the user already made in this session.
+      const currentPdf = await exportPdfTemp(doc.document_id);
+      inputs = [currentPdf, ...picked];
+    } else {
+      inputs = picked;
+    }
+
+    if (inputs.length < 2) {
+      setStatusMsg("Merge requires at least 2 PDFs.");
+      return;
+    }
+
     const outputPath = await save({
       filters: [{ name: "PDF", extensions: ["pdf"] }],
       defaultPath: "merged.pdf"
     });
-    if (typeof outputPath === "string") {
-      try {
-        setStatusMsg("Merging…");
-        await mergePdfPaths(files, outputPath);
-        setStatusMsg("Merge complete");
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setStatusMsg(`Merge failed: ${msg}`);
-      }
+    if (typeof outputPath !== "string") {return;}
+
+    try {
+      setStatusMsg(`Merging ${String(inputs.length)} PDFs…`);
+      await mergePdfPaths(inputs, outputPath);
+      setStatusMsg("Merge complete — opening merged file…");
+      // Automatically open the merged result so the user sees it immediately.
+      await openPdf(outputPath);
+      setAnalysis(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setStatusMsg(`Merge failed: ${msg}`);
     }
   };
 
