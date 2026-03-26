@@ -8,14 +8,14 @@ use lopdf::Document;
 use pdfium_render::prelude::*;
 use sha2::{Digest, Sha256};
 
-/// Serialize the lopdf document to raw PDF bytes for PDFium ingestion.
+/// Serialize the lopdf document to raw PDF bytes for `PDFium` ingestion.
 fn doc_to_bytes(document: &Document) -> anyhow::Result<Vec<u8>> {
     let mut bytes = Vec::new();
     document.clone().save_to(&mut bytes)?;
     Ok(bytes)
 }
 
-/// Probe well-known locations for the PDFium shared library.
+/// Probe well-known locations for the `PDFium` shared library.
 fn find_pdfium_library(tauri_resource_hint: Option<&Path>) -> Option<PathBuf> {
     let mut candidates: Vec<PathBuf> = Vec::new();
 
@@ -59,7 +59,7 @@ fn load_pdfium(hint: Option<&Path>) -> anyhow::Result<Pdfium> {
     if let Some(lib_path) = find_pdfium_library(hint) {
         let path_str = lib_path
             .to_str()
-            .ok_or_else(|| anyhow::anyhow!("PDFium path not valid UTF-8"))?;
+            .ok_or_else(|| anyhow::anyhow!("`PDFium` path not valid UTF-8"))?;
         let bindings = Pdfium::bind_to_library(path_str).map_err(|e| anyhow::anyhow!("{e}"))?;
         return Ok(Pdfium::new(bindings));
     }
